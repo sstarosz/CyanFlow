@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "3d-model-viewer",
+  "version": "0.0.1",
+  "dependencies": [
+    {
+      "name": "stb"
+    },
+    {
+      "name": "gtest"
+    },
+    {
+      "name": "benchmark"
+    },
+    {
+      "name": "eigen3"
+    },
+    {
+      "name": "spirv-cross"
+    },
+    {
+      "name": "shaderc"
+    },
+    {
+      "name": "spdlog"
+    }
+  ]
+}
