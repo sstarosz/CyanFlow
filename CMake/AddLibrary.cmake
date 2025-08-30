@@ -12,11 +12,12 @@ function(AddLibrary TARGET_NAME)
     )
 
     add_library(${TARGET_NAME} ${MVL_SOURCES} ${MVL_PUBLIC_HEADERS} ${MVL_PRIVATE_HEADERS})
+    add_library(cf::${TARGET_NAME} ALIAS ${TARGET_NAME})
 
-    target_include_directories(${TARGET_NAME} PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/Include/)
-    target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source/)
-    target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Include/${TARGET_NAME})
-    target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Include/${TARGET_NAME}/Nodes)
+    target_include_directories(${TARGET_NAME} PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}/Include/")
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/")
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Include/${TARGET_NAME}")
+    target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Include/${TARGET_NAME}/Nodes")
 
     target_compile_features(${TARGET_NAME} PRIVATE cxx_std_23)
 

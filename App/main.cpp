@@ -1,10 +1,7 @@
-//#include "Application/Application.hpp"
-#include <iostream>
-
+#include "Framework/Application.hpp"
 
 int main(int argc, char* argv[])
 {
-	std::cout << "CyanFlow Application" << std::endl;
-
-	return 0;
+	cf::framework::Application app(argc, argv);
+	return app.run();
 }
