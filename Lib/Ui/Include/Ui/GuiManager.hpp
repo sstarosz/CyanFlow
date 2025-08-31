@@ -5,21 +5,19 @@
 #include "Ui/MainWindow.hpp"
 
 #include <memory>
-	
-namespace cf::ui
-{
-class GuiManager
-	{
-	  public:
-		GuiManager(std::shared_ptr<core::Scene> scene);
 
-	  public:
-		void show();
+namespace cf::ui {
+class GuiManager {
+public:
+    GuiManager(std::shared_ptr<core::Scene> scene);
 
-	  private:
-		ui::MainWindow m_mainWindow;
-		std::shared_ptr<core::Scene> m_scene;
-	};
+public:
+    void show();
+
+private:
+    ui::MainWindow m_mainWindow;
+    std::shared_ptr<core::Scene> m_scene;
+};
 
 } // namespace cf::ui
 

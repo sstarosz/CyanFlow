@@ -1,16 +1,15 @@
 #include "GuiManager.hpp"
 
-namespace cf::ui
+namespace cf::ui {
+GuiManager::GuiManager(std::shared_ptr<core::Scene> scene)
+    : m_scene(scene)
+    , m_mainWindow(scene)
 {
-	GuiManager::GuiManager(std::shared_ptr<core::Scene> scene):
-        m_scene(scene),
-        m_mainWindow(scene)
-	{
-	}
+}
 
-	void GuiManager::show()
-	{
-        m_mainWindow.show();
-    }
+void GuiManager::show()
+{
+    m_mainWindow.show();
+}
 
 } // namespace cf::ui

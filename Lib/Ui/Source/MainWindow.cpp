@@ -3,35 +3,47 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QSplitter>
 
 #include <spdlog/spdlog.h>
 
-namespace cf::ui
+namespace cf::ui {
+MainWindow::MainWindow(std::shared_ptr<core::Scene> scene,
+    QWidget* parent,
+    Qt::WindowFlags flags)
+    : QMainWindow(parent, flags)
 {
-	MainWindow::MainWindow(std::shared_ptr<core::Scene> scene,
-						   QWidget* parent,
-						   Qt::WindowFlags flags):
-		QMainWindow(parent, flags)
-	{
-		spdlog::info("MainWindow::MainWindow()");
+    spdlog::info("MainWindow::MainWindow()");
 
-		setContentsMargins(0, 0, 0, 0);
+    setContentsMargins(0, 0, 0, 0);
 
-		QWidget* centralWidget = new QWidget(this);
-		QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
-		centralLayout->setContentsMargins(0, 0, 0, 0);
+    QWidget* centralWidget = new QWidget(this);
+    QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
+    centralLayout->setContentsMargins(0, 0, 0, 0);
 
-		QHBoxLayout* topBarLayout = new QHBoxLayout();
-		topBarLayout->addWidget(new QLabel("Left", this));
-		topBarLayout->addWidget(new QLabel("Center", this));
-		topBarLayout->addWidget(new QLabel("Right", this));
+    QWidget* topBarWidget = new QWidget(this);
+    QHBoxLayout* topBarLayout = new QHBoxLayout(topBarWidget);
+    topBarLayout->setContentsMargins(0, 0, 0, 0);
+    topBarLayout->addWidget(new QLabel("Left", this));
+    topBarLayout->addWidget(new QLabel("Center", this));
+    topBarLayout->addWidget(new QLabel("Right", this));
 
-		centralLayout->addLayout(topBarLayout);
-		centralLayout->addWidget(new ui::NodeEditor(scene, this));
+    // Node editor
+    ui::NodeEditor* nodeEditor = new ui::NodeEditor(scene, this);
 
-		setCentralWidget(centralWidget);
+    // Splitter between top bar and node editor
+    QSplitter* splitter = new QSplitter(Qt::Vertical, this);
+    splitter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
+    splitter->addWidget(topBarWidget);
+    splitter->addWidget(nodeEditor);
 
-		setWindowState(Qt::WindowMaximized);
-	}
+    QList<int> sizes;
+    sizes << 100 << 100;
+    splitter->setSizes(sizes);
+
+    centralLayout->addWidget(splitter);
+    setCentralWidget(centralWidget);
+    setWindowState(Qt::WindowMaximized);
+}
 
 } // namespace cf::ui

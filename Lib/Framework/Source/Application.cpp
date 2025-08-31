@@ -1,25 +1,25 @@
 #include "Application.hpp"
 
-#include <QLabel>
-
+#include "Core/Nodes/AddNode.hpp"
 #include <spdlog/spdlog.h>
 
-namespace cf::framework
+namespace cf::framework {
+Application::Application(int argc, char* argv[])
+    : m_app(argc, argv)
+    , m_scene(std::make_shared<core::Scene>())
+    , m_guiManager(m_scene)
 {
-	Application::Application(int argc, char* argv[]) :
-		m_app(argc, argv),
-		m_scene(std::make_shared<core::Scene>()),
-		m_guiManager(m_scene)
-	{
-	}
+}
 
-	int Application::run()
-	{
-		spdlog::info("Application::start()");
+int Application::run()
+{
+    spdlog::info("Application::start()");
 
-        m_guiManager.show();
+    m_scene->addNode(std::make_unique<core::AddNode>());
 
-		return m_app.exec();
-	}
+    m_guiManager.show();
+
+    return m_app.exec();
+}
 
 } // namespace cf::framework

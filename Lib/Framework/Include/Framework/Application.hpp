@@ -6,22 +6,19 @@
 
 #include <QApplication>
 
-namespace cf::framework
-{
-	class Application 
-	{
-	  public:
-		Application(int argc, char* argv[]);
-		int run();
-	
-	private:
-		QApplication m_app;
+namespace cf::framework {
+class Application {
+public:
+    Application(int argc, char* argv[]);
+    int run();
 
-		std::shared_ptr<core::Scene> m_scene;
+private:
+    QApplication m_app;
 
-		ui::GuiManager m_guiManager;
+    std::shared_ptr<core::Scene> m_scene;
 
-	};
+    ui::GuiManager m_guiManager;
+};
 
 } // namespace cf::framework
 

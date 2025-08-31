@@ -4,21 +4,19 @@
 #include "Core/Scene.hpp"
 #include <QMainWindow>
 
-namespace cf::ui
-{
+namespace cf::ui {
 
-	class MainWindow : public QMainWindow
-	{
-		Q_OBJECT
+class MainWindow : public QMainWindow {
+    Q_OBJECT
 
-	  public:
-		explicit MainWindow(std::shared_ptr<core::Scene> scene,
-							QWidget* parent = nullptr,
-							Qt::WindowFlags flags = {});
+public:
+    explicit MainWindow(std::shared_ptr<core::Scene> scene,
+        QWidget* parent = nullptr,
+        Qt::WindowFlags flags = {});
 
-	  	private:
-		std::shared_ptr<core::Scene> m_scene;
-	};
+private:
+    std::shared_ptr<core::Scene> m_scene;
+};
 
 } // namespace cf::ui
 
