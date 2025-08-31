@@ -9,7 +9,10 @@ AddLibrary(
 
     PUBLIC_HEADERS
         Include/Core/Scene.hpp
-
+        Include/Core/TypeDescriptors.hpp
+        Include/Core/TypeRegistry.hpp
+        Include/Core/Node.hpp
+        #Nodes
         Include/Core/Nodes/AddNode.hpp
         
     PRIVATE_HEADERS

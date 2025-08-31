@@ -4,6 +4,7 @@
 #include "Core/Node.hpp"
 
 namespace cf::core {
+
 class AddNode : public Node {
 public:
     AddNode() = default;
@@ -11,6 +12,16 @@ public:
 
     Status compute() override;
     TypeHandle getType() const override;
+
+    static NodeDescriptor initialize()
+    {
+      NodeDescriptor descriptor;
+      descriptor.typeName = "Add Node";
+
+
+
+      return descriptor;
+    }
 
 private:
     float m_inputA = 0.0f;

@@ -7,10 +7,20 @@
 #include <string>
 
 namespace cf::core {
+    
 enum class Status {
     eOK,
     eError
 };
+
+template<typename NodeType>
+concept NodeConcept = requires(NodeType node) {
+    { node.compute() } -> std::same_as<Status>;
+    { NodeType::initialize() } -> std::same_as<NodeDescriptor>;
+    { node.getType() } -> std::same_as<TypeHandle>;
+};
+
+
 
 using NodeHandle = uint64_t;
 static constexpr NodeHandle kInvalidNodeHandle = 0;
