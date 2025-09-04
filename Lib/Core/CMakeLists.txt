@@ -18,4 +18,5 @@ AddLibrary(
     PRIVATE_HEADERS
 
     PUBLIC_LIBS
+        spdlog::spdlog
 )

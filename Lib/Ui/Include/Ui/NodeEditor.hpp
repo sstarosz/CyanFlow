@@ -7,6 +7,8 @@
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QGraphicsSceneMouseEvent>
+
 #include <QMenuBar>
 #include <QWidget>
 
@@ -21,7 +23,7 @@ constexpr QColor NodeHighlightBorderColor = QColor(135, 229, 207);
 
 class NodeItem;
 class NodeAttribute;
-
+class ConnectionItem;
 
 class NodePlug : public QAbstractGraphicsShapeItem
 {
@@ -50,10 +52,14 @@ class NodePlug : public QAbstractGraphicsShapeItem
 
     QPointF getPlugCenterPosition() const;
 
+    void addConnection(ConnectionItem* connection);
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
     private:
     bool m_isHovered = false;
     bool m_isConnected = false;
     bool m_isConnecting = false;
+    std::vector<ConnectionItem*> m_connections;
 
     QPainterPath createConnectionPath();
 };
@@ -109,6 +115,7 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     NodeItem* getParentNode() const;
 
     std::shared_ptr<core::Attribute> getAttribute() const;
+    core::AttributeDescriptor getAttributeDescriptor() const;
 
     private:
     std::shared_ptr<core::Attribute> m_attribute; // Handler to Attribute
@@ -116,7 +123,6 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     NodePlug* m_pInputPlug;
     NodePlug* m_pOutputPlug;
 };
-
 
 class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t NodeWidth = 300;
@@ -150,6 +156,26 @@ private:
     bool m_isHovered = false;
 };
 
+class ConnectionItem : public QGraphicsPathItem {
+
+    static constexpr QColor connectionColor = QColor(135, 229, 207);
+public:
+    ConnectionItem(NodePlug* startPlug, NodePlug* endPlug, QGraphicsItem* parent = nullptr);
+
+    void updatePath();
+    void setSelected(bool state);
+    void setHovered(bool state);
+
+    NodePlug* getStartPlug() const;
+    NodePlug* getEndPlug() const;
+private:
+    NodePlug* m_startPlug;
+    NodePlug* m_endPlug;
+    bool m_isSelected = false;
+    bool m_isHovered = false;
+    QPainterPath m_path;
+};
+
 class NodeScene : public QGraphicsScene {
     Q_OBJECT
 
@@ -164,8 +190,18 @@ public:
 protected:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
 
+    /*--------------------------------*/
+    /*---------Event Handlers---------*/
+    /*--------------------------------*/
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+
+
 private:
     std::shared_ptr<core::Scene> m_scene;
+    std::vector<NodeItem*> m_nodeItems;
+    std::vector<ConnectionItem*> m_connectionItems;
 };
 
 class NodeGraphView : public QGraphicsView {

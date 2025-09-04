@@ -31,7 +31,11 @@ int Application::run()
 
 
 
-    m_scene->addNode(std::make_unique<core::AddNode>());
+    auto nodeA = m_scene->addNode(std::make_unique<core::AddNode>());
+    auto nodeB = m_scene->addNode(std::make_unique<core::AddNode>());
+
+    m_scene->connect<float>(nodeA, nodeA->outputs.result, nodeB, nodeB->inputs.input1);
+    
 
     m_guiManager.show();
 
