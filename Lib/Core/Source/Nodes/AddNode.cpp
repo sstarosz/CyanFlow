@@ -3,15 +3,14 @@
 namespace cf::core {
 Status AddNode::compute()
 {
-    m_result = m_inputA + m_inputB;
+    outputs.result = inputs.input1 + inputs.input2;
 
     return Status::eOK;
 }
 
 TypeHandle AddNode::getType() const
 {
-    // TODO
-    return kInvalidNodeHandle;
+    return TypeRegistry::getTypeHandle<AddNode>();
 }
 
 } // namespace cf::core

@@ -19,6 +19,105 @@ constexpr QColor NodeBorderColor = QColor(90, 103, 107);
 // #87E5CF
 constexpr QColor NodeHighlightBorderColor = QColor(135, 229, 207);
 
+class NodeItem;
+class NodeAttribute;
+
+
+class NodePlug : public QAbstractGraphicsShapeItem
+{
+    private:
+    static constexpr QColor nodeConnectionColor = QColor(85, 209, 208);
+    static constexpr QColor nodeConnectionHover = QColor(175, 233, 233);
+
+    public:
+    NodePlug(QGraphicsItem* parent = nullptr);
+
+    QRectF boundingRect() const override;
+
+    void paint(QPainter* painter,
+                const QStyleOptionGraphicsItem* option,
+                QWidget* widget) override;
+
+    void setConnected(bool state);
+
+    bool isConnected() const;
+
+    void beginConnection();
+
+    void endConnection();
+
+    NodeAttribute* getParentAttribute() const;
+
+    QPointF getPlugCenterPosition() const;
+
+    private:
+    bool m_isHovered = false;
+    bool m_isConnected = false;
+    bool m_isConnecting = false;
+
+    QPainterPath createConnectionPath();
+};
+
+/**
+ * @brief Represent attribute in the node
+ *
+ * MARK: NodeAttribute
+ */
+class NodeAttribute : public QAbstractGraphicsShapeItem
+{
+    private:
+    // Size
+    // Main node size
+    static constexpr int32_t nodeWidth = 320;
+    static constexpr int32_t nodeHeight = 25;
+
+    // Node Laber
+    static constexpr int32_t nodeLabelMarginHorizontal = 25;
+    static constexpr int32_t nodeLabelMarginVertical = 0;
+    static constexpr int32_t nodeLabelWidth = 280;
+    static constexpr int32_t nodeLabelHeight = 25;
+
+    // Colors
+    // #585F63
+    static constexpr QColor nodeLabelColor = QColor(88, 95, 99);
+    // #87E5CF
+    static constexpr QColor nodeConnectionColor = QColor(85, 209, 208);
+    ;
+
+    public:
+    NodeAttribute(std::shared_ptr<core::Attribute> attribute, 
+                  core::AttributeDescriptor m_attributeDesc,
+                  QGraphicsItem* parent = nullptr);
+
+    QRectF boundingRect() const override;
+
+    void paint(QPainter* painter,
+                [[maybe_unused]] const QStyleOptionGraphicsItem* option,
+                [[maybe_unused]] QWidget* widget) override;
+
+    /*--------------------------------*/
+    /*---------Event Handlers---------*/
+    /*--------------------------------*/
+    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+
+    /*--------------------------------*/
+    /*---------Getter/Setters---------*/
+    /*--------------------------------*/
+    NodePlug* getInputPlug() const;
+    NodePlug* getOutputPlug() const;
+    NodeItem* getParentNode() const;
+
+    std::shared_ptr<core::Attribute> getAttribute() const;
+
+    private:
+    std::shared_ptr<core::Attribute> m_attribute; // Handler to Attribute
+    core::AttributeDescriptor m_attributeDesc;
+    NodePlug* m_pInputPlug;
+    NodePlug* m_pOutputPlug;
+};
+
+
 class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t NodeWidth = 300;
     static constexpr int32_t NodeHeight = 400;
@@ -28,7 +127,7 @@ class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t HeaderRadius = 20;
 
 public:
-    NodeItem(std::shared_ptr<core::Node> node, QGraphicsItem* parent = nullptr);
+    NodeItem(std::shared_ptr<core::Scene> scene, std::shared_ptr<core::Node> node, QGraphicsItem* parent = nullptr);
 
     virtual QRectF boundingRect() const override;
 
@@ -44,7 +143,9 @@ public:
     void setSelected(bool state);
 
 private:
+    std::shared_ptr<core::Scene> m_scene;
     std::shared_ptr<core::Node> m_node;
+    std::vector<NodeAttribute*> m_attributes;
     bool m_isSelected = false;
     bool m_isHovered = false;
 };
@@ -74,7 +175,6 @@ public:
     explicit NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent = nullptr);
 
 protected:
-    void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;
 
 private:

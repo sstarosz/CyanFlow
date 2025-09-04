@@ -29,10 +29,17 @@ struct TypeDescriptor
     std::function<std::string(const void*)> toString;
 };
 
+
+enum class AttributeRole {
+    eInput,    // Readable only
+    eOutput,   // Writable only
+    eInOut     // Readable and writable (pass-through)
+};
+
 struct AttributeDescriptor {
     TypeHandle handle;
     std::string name { "" };
-    //AttributeRole role { AttributeRole::eInput };
+    AttributeRole role { AttributeRole::eInput };
 
     std::function<void(void* nodePtr, std::shared_ptr<Attribute> attribute)> setter;
 };

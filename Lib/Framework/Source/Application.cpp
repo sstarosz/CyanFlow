@@ -11,9 +11,25 @@ Application::Application(int argc, char* argv[])
 {
 }
 
+void registerTypes()
+{
+    core::TypeRegistry::registerType<float>("float");
+}
+
+void registerNodeTypes()
+{
+    core::TypeRegistry::registerNodeType<core::AddNode>();
+}
+
+
 int Application::run()
 {
     spdlog::info("Application::start()");
+
+    registerTypes();
+    registerNodeTypes();
+
+
 
     m_scene->addNode(std::make_unique<core::AddNode>());
 

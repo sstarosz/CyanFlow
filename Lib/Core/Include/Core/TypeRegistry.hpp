@@ -10,7 +10,8 @@
 namespace cf::core {
 
 namespace {
-    inline std::atomic<uint64_t> global_type_id_counter{0};
+    //TODO: Use better type id generation
+    inline std::atomic<uint64_t> global_type_id_counter { 0 };
 }
 
 class TypeRegistry {
@@ -33,8 +34,6 @@ public:
         static const uint64_t id = global_type_id_counter++;
         return TypeHandle(id);
     }
-
-
 
     template <typename Type>
     static TypeDescriptor getTypeDescriptor()
@@ -100,6 +99,79 @@ public:
         }
 
         throw std::runtime_error("Node type not registered with handle: " + std::to_string(handle));
+    }
+
+    template <typename Type>
+    static void registerNodeType()
+    {
+        getInstance().registerNodeTypeImpl<Type>();
+    }
+
+    template <typename Type>
+    TypeHandle registerNodeTypeImpl()
+    {
+        TypeHandle handle = getTypeHandle<Type>();
+        NodeDescriptor desc = Type::initialize();
+
+        nodeMap[handle] = desc;
+
+        return handle;
+    }
+
+    template <typename Type>
+    static void registerType(std::string_view name)
+    {
+        getInstance().registerTypeImpl<Type>(name);
+    }
+
+    template <typename Type>
+    TypeHandle registerTypeImpl(std::string_view name)
+    {
+        TypeDescriptor desc = makeTypeDescriptor<Type>();
+        desc.name = name;
+
+        TypeHandle handle = getTypeHandle<Type>();
+        typeMap[handle] = desc;
+
+        return handle;
+    }
+
+    template <typename Type>
+    TypeDescriptor makeTypeDescriptor()
+    {
+        TypeDescriptor desc;
+        // desc.name = TypeInfo<Type>::name();
+        desc.size = sizeof(Type);
+
+        desc.create = []() -> void* {
+            return new Type();
+        };
+
+        desc.copy = [](void* dst, const void* src) {
+            new (dst) Type(*static_cast<const Type*>(src));
+        };
+
+        desc.destroy = [](void* ptr) {
+            if constexpr (std::is_trivially_destructible_v<Type>) {
+                delete static_cast<Type*>(ptr);
+            } else {
+                static_cast<Type*>(ptr)->~Type();
+            }
+        };
+
+        desc.toString = [](const void* ptr) -> std::string {
+            const Type& value = *static_cast<const Type*>(ptr);
+            if constexpr (std::is_arithmetic_v<Type>) {
+                return std::to_string(value);
+            } else if constexpr (std::is_same_v<Type, std::string>) {
+                return value;
+            } 
+            else {
+                return "unsupported";
+            }
+        };
+
+        return desc;
     }
 
 private:

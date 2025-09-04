@@ -30,6 +30,9 @@ public:
 
     const std::unordered_map<NodeHandle, std::shared_ptr<Node>>& getNodes() const { return m_nodes; }
 
+
+    const std::unordered_map<AttributeHandle, std::shared_ptr<Attribute>>& getAttributes() const { return attributes; }
+
 private:
     NodeHandle generateNodeHandle() { return m_nextNodeHandle++; }
 
@@ -46,8 +49,8 @@ private:
         return attribute;
     }
 
-    NodeHandle m_nextNodeHandle = 1;
-    uint64_t nextAttributeHandle { 1 };
+    NodeHandle m_nextNodeHandle { 1 };
+    AttributeHandle nextAttributeHandle { 1 };
 
 
     std::unordered_map<NodeHandle, std::shared_ptr<Node>> m_nodes;
