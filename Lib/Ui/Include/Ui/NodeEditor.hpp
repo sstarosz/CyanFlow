@@ -31,6 +31,9 @@ class NodePlug : public QAbstractGraphicsShapeItem
     static constexpr QColor nodeConnectionColor = QColor(85, 209, 208);
     static constexpr QColor nodeConnectionHover = QColor(175, 233, 233);
 
+    static constexpr float plugWidth = 25.0f;
+    static constexpr float plugHeight = 25.0f;
+
     public:
     NodePlug(QGraphicsItem* parent = nullptr);
 
@@ -41,12 +44,13 @@ class NodePlug : public QAbstractGraphicsShapeItem
                 QWidget* widget) override;
 
     void setConnected(bool state);
-
     bool isConnected() const;
 
     void beginConnection();
-
     void endConnection();
+
+    void setHovered(bool state);
+    bool isHovered() const;
 
     NodeAttribute* getParentAttribute() const;
 
@@ -61,7 +65,7 @@ class NodePlug : public QAbstractGraphicsShapeItem
     bool m_isConnecting = false;
     std::vector<ConnectionItem*> m_connections;
 
-    QPainterPath createConnectionPath();
+    QPainterPath createPlugShape();
 };
 
 /**
@@ -102,12 +106,6 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
                 [[maybe_unused]] QWidget* widget) override;
 
     /*--------------------------------*/
-    /*---------Event Handlers---------*/
-    /*--------------------------------*/
-    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
-
-    /*--------------------------------*/
     /*---------Getter/Setters---------*/
     /*--------------------------------*/
     NodePlug* getInputPlug() const;
@@ -128,8 +126,8 @@ class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t NodeWidth = 300;
     static constexpr int32_t NodeHeight = 400;
 
-    static constexpr int32_t HeaderHeight = 45;
     static constexpr int32_t HeaderWidth = 300;
+    static constexpr int32_t HeaderHeight = 45;
     static constexpr int32_t HeaderRadius = 20;
 
 public:
@@ -138,36 +136,33 @@ public:
     virtual QRectF boundingRect() const override;
 
     virtual void paint(QPainter* painter,
-        const QStyleOptionGraphicsItem* option,
-        QWidget* widget) override;
-
-    void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+                       const QStyleOptionGraphicsItem* option,
+                       QWidget* widget) override;
 
     std::shared_ptr<core::Node> getNode() const;
-
-    void setSelected(bool state);
 
 private:
     std::shared_ptr<core::Scene> m_scene;
     std::shared_ptr<core::Node> m_node;
     std::vector<NodeAttribute*> m_attributes;
-    bool m_isSelected = false;
-    bool m_isHovered = false;
 };
 
 class ConnectionItem : public QGraphicsPathItem {
 
     static constexpr QColor connectionColor = QColor(135, 229, 207);
 public:
+    ConnectionItem(QGraphicsItem* parent = nullptr);
     ConnectionItem(NodePlug* startPlug, NodePlug* endPlug, QGraphicsItem* parent = nullptr);
 
     void updatePath();
-    void setSelected(bool state);
-    void setHovered(bool state);
+
+    void setStartPlug(NodePlug* plug) { m_startPlug = plug; }
+    void updateTempConnection(const QPointF& endPos);
+    void setEndPlug(NodePlug* plug) { m_endPlug = plug; }
 
     NodePlug* getStartPlug() const;
     NodePlug* getEndPlug() const;
+
 private:
     NodePlug* m_startPlug;
     NodePlug* m_endPlug;
@@ -179,8 +174,15 @@ private:
 class NodeScene : public QGraphicsScene {
     Q_OBJECT
 
+
     constexpr static int32_t sceneWidth = 10000;
     constexpr static int32_t sceneHeight = 10000;
+
+    enum class DragMode {
+        None,
+        Panning,
+        Connecting
+    };
 
 public:
     explicit NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent = nullptr);
@@ -197,11 +199,15 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
-
 private:
     std::shared_ptr<core::Scene> m_scene;
     std::vector<NodeItem*> m_nodeItems;
     std::vector<ConnectionItem*> m_connectionItems;
+
+    DragMode m_dragMode = DragMode::None;
+
+    ConnectionItem* m_tempConnection = nullptr;
+    NodePlug* m_startPlug = nullptr;
 };
 
 class NodeGraphView : public QGraphicsView {
@@ -210,12 +216,26 @@ class NodeGraphView : public QGraphicsView {
 public:
     explicit NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent = nullptr);
 
+
+    void resetView();
+
 protected:
     void showEvent(QShowEvent* event) override;
+
+    /*--------------------------------*/
+    /*---------Event Handlers---------*/
+    /*--------------------------------*/
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
     NodeScene* m_nodeScene;
     std::shared_ptr<core::Scene> m_scene;
+
+    bool m_isPanning = false;
+    QPoint m_panStartPoint;
+
 };
 
 class NodeEditor : public QWidget {

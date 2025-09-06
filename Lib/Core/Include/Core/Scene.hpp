@@ -115,6 +115,7 @@ public:
         }
     }
 
+    //TODO: should AttributeDescriptor be stored in Scene?
     AttributeDescriptor getAttributeDescriptor(AttributeHandle handle) const
     {
         auto it = attributeDescriptors.find(handle);

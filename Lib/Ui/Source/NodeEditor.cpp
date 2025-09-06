@@ -7,12 +7,13 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QMouseEvent>
-
+#include <QScrollBar>
 
 #include <algorithm>
 
 #include <spdlog/spdlog.h>
 namespace cf::ui {
+
 /*-------------------------------------------*/
 /*-----------MARK: NodeItem------------------*/
 /*-------------------------------------------*/
@@ -22,24 +23,17 @@ NodeItem::NodeItem(std::shared_ptr<core::Scene> scene,
     : QAbstractGraphicsShapeItem(parent)
     , m_scene(scene)
     , m_node(node)
-    , m_isSelected(false)
 {
     setAcceptHoverEvents(true);
     setFlags(flags() | QGraphicsItem::ItemIsSelectable);
-    setBrush(NodeColor);
-    setPen(Qt::NoPen);
-
-    core::NodeDescriptor typeDesc = core::TypeRegistry::getNodeDescriptor(node->getType());
 
     uint32_t inputYOffset = 55;
     const auto& attributes = scene->getNodeAttributes(node);
-    spdlog::info("NodeItem::NodeItem - Found {} attributes for node '{}'", attributes.size(), node->getName());
-
     for (const auto& attr : attributes) {
         core::AttributeDescriptor attrDesc = scene->getAttributeDescriptor(attr->getHandle());
 
         NodeAttribute* attributeItem = new NodeAttribute(attr, attrDesc, this);
-            attributeItem->setZValue(1);
+            attributeItem->setZValue(zValue() + 1);
             attributeItem->setPos(-10, inputYOffset);
             m_attributes.push_back(attributeItem);
             inputYOffset += 29;
@@ -56,59 +50,29 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QColor borderColor = m_isSelected || m_isHovered ? NodeHighlightBorderColor : NodeBorderColor;
+    QColor borderColor = isSelected() || isUnderMouse()? NodeHighlightBorderColor : NodeBorderColor;
     constexpr qreal borderWidth = 5.0;
 
-    // 1. Draw the main body background (excluding header area)
+    // 1. Draw the main body background (border)
     painter->setPen(Qt::NoPen);
     painter->setBrush(borderColor);
     painter->drawRoundedRect(QRectF(0, 0, NodeWidth, NodeHeight), 20, 20);
 
-    // 2. Draw the node body as a slightly smaller filled rounded rect
+    // 2. Draw the node body as a slightly smaller rounded rect (inset to show border)
     painter->setBrush(NodeColor);
     painter->drawRoundedRect(QRectF(borderWidth, borderWidth, NodeWidth - 2 * borderWidth, NodeHeight - 2 * borderWidth), 20 - borderWidth, 20 - borderWidth);
 
     // 3. Draw the header as a filled rounded rect (same as before, but inset)
     painter->setBrush(borderColor);
-    painter->drawRoundedRect(QRectF(0, 0, NodeWidth, HeaderHeight), 20, 20);
+    painter->drawRoundedRect(QRectF(0, 0, NodeWidth, HeaderHeight), HeaderRadius, HeaderRadius);
     painter->drawRect(QRectF(0, 20, NodeWidth, 25)); // Bottom part of header to cover rounded corners
 
     // 4. Draw the node name
     painter->setPen(Qt::white);
     painter->setFont(QFont("Inter", 24));
-    QRectF textRect(20, 10, 280, 35);
+    QRectF textRect(30, 0, NodeWidth, HeaderHeight);
     painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
         QString::fromStdString(m_node->getName()));
-}
-
-void NodeItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
-{
-    QAbstractGraphicsShapeItem::hoverEnterEvent(event);
-
-    if (m_isSelected) {
-        return;
-    }
-
-    m_isHovered = true;
-    update();
-}
-
-void NodeItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
-{
-    QAbstractGraphicsShapeItem::hoverLeaveEvent(event);
-
-    if (m_isSelected) {
-        return;
-    }
-
-    m_isHovered = false;
-    update();
-}
-
-void NodeItem::setSelected(bool state)
-{
-    m_isSelected = state;
-    update();
 }
 
 std::shared_ptr<core::Node> NodeItem::getNode() const
@@ -117,7 +81,7 @@ std::shared_ptr<core::Node> NodeItem::getNode() const
 }
 
 /*-------------------------------------------*/
-/*-----------MARK: NodeItem------------------*/
+/*-----------MARK: NodeScene------------------*/
 /*-------------------------------------------*/
 
 NodeScene::NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent)
@@ -256,19 +220,122 @@ void NodeScene::drawBackground(QPainter* painter, const QRectF& rect)
 
 void NodeScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-    Q_UNUSED(event);
+    if (event->button() == Qt::LeftButton) {
+        QGraphicsItem* item = itemAt(event->scenePos(), QTransform());
+        
+        if (NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
+            m_dragMode = DragMode::Connecting;
+            
+            //TODO: check if this is necessary
+            if(m_tempConnection) {
+                delete m_tempConnection;
+                m_tempConnection = nullptr;
+            }
+
+            m_tempConnection = new ConnectionItem();
+            m_tempConnection->setAcceptedMouseButtons(Qt::NoButton);
+            m_tempConnection->setAcceptHoverEvents(false);
+            m_tempConnection->setZValue(-1);
+
+            m_tempConnection->setStartPlug(plug);
+            m_tempConnection->updateTempConnection(event->scenePos());
+            addItem(m_tempConnection);
+
+            m_startPlug = plug;
+            m_startPlug->beginConnection();
+            event->accept();
+
+        } else {
+            QGraphicsScene::mousePressEvent(event);
+        }
+    } else {
+        QGraphicsScene::mousePressEvent(event);
+    }
 }
 
 void NodeScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 {
-    Q_UNUSED(event);
+   if(m_dragMode == DragMode::Connecting && m_tempConnection) {
+        m_tempConnection->updateTempConnection(event->scenePos());
+
+        QList<QGraphicsItem*> itemsAtPos = items(event->scenePos());
+
+        NodePlug* hoveredPlug = nullptr;
+        for (QGraphicsItem* item : itemsAtPos) {
+            // Check if the item is a NodePlug
+            if (NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
+                hoveredPlug = plug;
+                break;
+            }
+        }
+        
+        for(QGraphicsItem* item : items()) {
+            if(NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
+                plug->setHovered(plug == hoveredPlug);
+            }
+        }
+
+        event->accept();
+    } else {
+        QGraphicsScene::mouseMoveEvent(event);
+    }
 
 }
 
 void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
-    Q_UNUSED(event);
+    if(m_dragMode == DragMode::Connecting && m_tempConnection) {
+
+        QList<QGraphicsItem*> itemsAtPos = items(event->scenePos());
+
+        NodePlug* plug = nullptr;
+        for(auto& item : itemsAtPos) {
+            plug = dynamic_cast<NodePlug*>(item);
+
+            if(plug && plug != m_startPlug) {
+                break;
+            } 
+        }
+
+
+        if (plug) {
+            
+            m_tempConnection->setEndPlug(plug);
+            m_tempConnection->updatePath();
+            m_connectionItems.push_back(m_tempConnection);
+
+
+            m_startPlug->addConnection(m_tempConnection);
+            m_startPlug->endConnection();
+            m_startPlug->setConnected(true);
+
+            plug->addConnection(m_tempConnection);
+            plug->endConnection();
+            plug->setConnected(true);
+
+            m_tempConnection = nullptr;
+        } else {
+            spdlog::info("NodeScene::mouseReleaseEvent - Not released on a plug, removing temp connection");
+            removeItem(m_tempConnection);
+            delete m_tempConnection;
+            m_tempConnection = nullptr;
+
+            if(m_startPlug) {
+                m_startPlug->endConnection();
+            }
+        }
+
+        m_dragMode = DragMode::None;
+        event->accept();
+    } else {
+        spdlog::info("NodeScene::mouseReleaseEvent - Not in connecting mode");
+        QGraphicsScene::mouseReleaseEvent(event);
+    }
 }
+
+/*-------------------------------------------*/
+/*-----------MARK: NodeGraphView-------------*/
+/*-------------------------------------------*/
 
 NodeGraphView::NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent)
     : QGraphicsView(parent)
@@ -280,7 +347,6 @@ NodeGraphView::NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent
     setRenderHint(QPainter::TextAntialiasing);
     setRenderHint(QPainter::SmoothPixmapTransform);
 
-    setDragMode(QGraphicsView::ScrollHandDrag);
     setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
     setOptimizationFlags(QGraphicsView::DontSavePainterState | QGraphicsView::DontAdjustForAntialiasing);
 
@@ -293,12 +359,60 @@ NodeGraphView::NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent
     setScene(m_nodeScene);
 }
 
+void NodeGraphView::resetView()
+{
+    resetTransform();
+    scale(1.0, 1.0);
+    centerOn(0, 0);
+}
+
 void NodeGraphView::showEvent(QShowEvent* event)
 {
     QGraphicsView::showEvent(event);
     QTimer::singleShot(0, this, [this]() { centerOn(0, 0); });
     m_nodeScene->populateScene();
 }
+
+void NodeGraphView::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::MiddleButton) {
+            m_isPanning = true;
+            m_panStartPoint = event->pos();
+            setCursor(Qt::ClosedHandCursor);
+            event->accept();
+            return;
+    }
+
+    QGraphicsView::mousePressEvent(event);
+}
+
+void NodeGraphView::mouseMoveEvent(QMouseEvent* event) {
+    if (m_isPanning) {
+        // Calculate pan distance and update scrollbars
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - (event->position().x() - m_panStartPoint.x()));
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - (event->position().y() - m_panStartPoint.y()));
+        m_panStartPoint = event->pos();
+        event->accept();
+        return;
+    }
+    
+    QGraphicsView::mouseMoveEvent(event);
+}
+
+void NodeGraphView::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::MiddleButton) {
+        m_isPanning = false;
+        setCursor(Qt::ArrowCursor);
+        event->accept();
+        return;
+    }
+    
+    QGraphicsView::mouseReleaseEvent(event);
+}
+
+/*-------------------------------------------*/
+/*-------------MARK: NodeEditor--------------*/
+/*-------------------------------------------*/
 
 NodeEditor::NodeEditor(std::shared_ptr<core::Scene> scene, QWidget* parent)
     : QWidget(parent)
@@ -315,11 +429,13 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
     fileMenu->addAction("Action 2");
     fileMenu->addAction("Action 3");
 
+    m_graphView = new NodeGraphView(m_scene, this);
+
     QToolBar* toolBar = new QToolBar("Toolbar", this);
     toolBar->addAction("Tool 1");
     toolBar->addAction("Tool 2");
+    toolBar->addAction("Reset View", m_graphView, &NodeGraphView::resetView);
 
-    m_graphView = new NodeGraphView(m_scene, this);
 
     QVBoxLayout* nodeEditorLayout = new QVBoxLayout(this);
     nodeEditorLayout->setMenuBar(m_menuBar);
@@ -329,6 +445,9 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
     setLayout(nodeEditorLayout);
 }
 
+/*-------------------------------------------*/
+/*-------------MARK: NodeAttribute-----------*/
+/*-------------------------------------------*/
 NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
     core::AttributeDescriptor m_attributeDesc,
     QGraphicsItem* parent)
@@ -336,16 +455,12 @@ NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
     , m_attribute(attribute)
     , m_attributeDesc(m_attributeDesc)
 {
-    setAcceptHoverEvents(true);
-
-    setBrush(nodeLabelColor);
-    setPen(Qt::NoPen);
-
     // Draw connection Input
     if (m_attributeDesc.role == core::AttributeRole::eInput || m_attributeDesc.role == core::AttributeRole::eInOut)
     {
         NodePlug* nodePlug = new NodePlug(this);
         nodePlug->setPos(0, 0);
+        nodePlug->setZValue(zValue() + 1);
         m_pInputPlug = nodePlug;
     }
 
@@ -354,6 +469,8 @@ NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
     {
         //TODO validate transform
         NodePlug* nodePlug = new NodePlug(this);
+        nodePlug->setZValue(zValue() + 1);
+
         QTransform transform;
         transform.translate(320, 0);
         transform.scale(-1, 1);
@@ -375,8 +492,8 @@ void NodeAttribute::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     // TODO connection and disconnection animation
 
     // Draw Label
-    painter->setPen(pen());
-    painter->setBrush(brush());
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(nodeLabelColor);
     painter->drawRect(20,
         0,
         nodeLabelWidth,
@@ -403,18 +520,6 @@ void NodeAttribute::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
         Qt::AlignLeft | Qt::AlignVCenter,
         QString::fromStdString(m_attributeDesc.name));
 
-}
-
-void NodeAttribute::hoverEnterEvent(QGraphicsSceneHoverEvent* event)
-{
-    update();
-    QAbstractGraphicsShapeItem::hoverEnterEvent(event);
-}
-
-void NodeAttribute::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
-{
-    update();
-    QAbstractGraphicsShapeItem::hoverLeaveEvent(event);
 }
 
 NodeItem* NodeAttribute::getParentNode() const
@@ -452,14 +557,15 @@ NodePlug::NodePlug(QGraphicsItem* parent)
     m_connections()
 {
     setAcceptHoverEvents(true);
+    setZValue(10);
 }
 
 QRectF NodePlug::boundingRect() const
 {
-    return QRectF(0.0F, 0.0F, 25.0F, 25.0F);
+    return QRectF(0.0F, 0.0F, plugWidth, plugHeight);
 }
 
-QPainterPath NodePlug::createConnectionPath()
+QPainterPath NodePlug::createPlugShape()
 {
     QPainterPath path;
 
@@ -471,7 +577,7 @@ QPainterPath NodePlug::createConnectionPath()
 
     // Determine the right extent based on connection state
     float rightExtent = 15.0f;
-    if (isConnected() || isUnderMouse() || m_isConnecting) {
+    if (isConnected() || isUnderMouse() || isHovered() || m_isConnecting) {
         rightExtent = 25.0f;
     }
 
@@ -506,7 +612,7 @@ void NodePlug::paint(QPainter* painter,
     painter->setPen(Qt::NoPen);
     painter->setBrush(nodeConnectionColor);
 
-    QPainterPath path = createConnectionPath();
+    QPainterPath path = createPlugShape();
     painter->drawPath(path);
 }
 
@@ -528,6 +634,17 @@ void NodePlug::beginConnection()
 void NodePlug::endConnection()
 {
     m_isConnecting = false;
+}
+
+void NodePlug::setHovered(bool state)
+{
+    m_isHovered = state;
+    update();
+}
+
+bool NodePlug::isHovered() const
+{
+    return m_isHovered;
 }
 
 NodeAttribute* NodePlug::getParentAttribute() const
@@ -562,14 +679,19 @@ QVariant NodePlug::itemChange(GraphicsItemChange change, const QVariant &value)
 /*-----------MARK: ConnectionItem------------------*/
 /*-------------------------------------------*/
 
-ConnectionItem::ConnectionItem(NodePlug* startPlug, NodePlug* endPlug, QGraphicsItem* parent):
-    QGraphicsPathItem(parent)
+ConnectionItem::ConnectionItem(QGraphicsItem* parent):
+    ConnectionItem(nullptr, nullptr, parent)
+{
+}
+
+ConnectionItem::ConnectionItem(NodePlug* startPlug, NodePlug* endPlug, QGraphicsItem* parent)
+    : QGraphicsPathItem(parent)
     , m_startPlug(startPlug)
     , m_endPlug(endPlug)
+    , m_isHovered(false)
+    , m_isSelected(false)
 {
     setPen(QPen(connectionColor, 3));
-    setBrush(Qt::NoBrush);
-    setZValue(-1); // Ensure connections are drawn behind nodes
     updatePath();
 }
 
@@ -603,26 +725,23 @@ NodePlug* ConnectionItem::getEndPlug() const
     return m_endPlug;
 }
 
-void ConnectionItem::setHovered(bool state)
+void ConnectionItem::updateTempConnection(const QPointF& endPos)
 {
-    m_isHovered = state;
-    update();
-}
-
-void ConnectionItem::setSelected(bool state)
-{
-    m_isSelected = state;
-    update();
-    if (m_isSelected) {
-        setPen(QPen(Qt::yellow, 4));
-    } else if (m_isHovered) {
-        setPen(QPen(Qt::cyan, 4));
-    } else {
-        setPen(QPen(connectionColor, 3));
+    if (!m_startPlug) {
+        return;
     }
+
+    QPointF startPos = m_startPlug->getPlugCenterPosition();
+
+    QPainterPath path;
+    path.moveTo(startPos);
+
+    // Control points for cubic Bezier curve
+    QPointF controlPoint1 = startPos + QPointF(100, 0);
+    QPointF controlPoint2 = endPos - QPointF(100, 0);
+
+    path.cubicTo(controlPoint1, controlPoint2, endPos);
+    setPath(path);
 }
-
-
-
 
 } // namespace cf::ui
