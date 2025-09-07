@@ -1,5 +1,6 @@
 #include "MainWindow.hpp"
 #include "NodeEditor.hpp"
+#include "AttributeEditor.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -29,13 +30,23 @@ MainWindow::MainWindow(std::shared_ptr<core::Scene> scene,
     topBarLayout->addWidget(new QLabel("Right", this));
 
     // Node editor
-    ui::NodeEditor* nodeEditor = new ui::NodeEditor(scene, this);
 
     // Splitter between top bar and node editor
     QSplitter* splitter = new QSplitter(Qt::Vertical, this);
     splitter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
     splitter->addWidget(topBarWidget);
-    splitter->addWidget(nodeEditor);
+
+    ui::NodeEditor* nodeEditor = new ui::NodeEditor(scene, this);
+    ui::AttributeEditor* attributeEditor = new ui::AttributeEditor(this);
+    QSplitter* nodeEditorSpliter = new QSplitter(Qt::Horizontal, this);
+    nodeEditorSpliter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
+    nodeEditorSpliter->addWidget(nodeEditor);
+    nodeEditorSpliter->addWidget(attributeEditor);
+    QList<int> nodeEditorSizes;
+    nodeEditorSizes << 300 << 100;
+    nodeEditorSpliter->setSizes(nodeEditorSizes);
+
+    splitter->addWidget(nodeEditorSpliter);
 
     QList<int> sizes;
     sizes << 100 << 100;
