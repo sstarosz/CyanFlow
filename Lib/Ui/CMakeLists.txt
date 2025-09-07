@@ -10,10 +10,12 @@ AddLibrary(
         Source/MainWindow.cpp
         Source/GuiManager.cpp
         Source/NodeEditor.cpp
+        Source/AttributeEditor.cpp
     PUBLIC_HEADERS
         Include/Ui/MainWindow.hpp
         Include/Ui/GuiManager.hpp
         Include/Ui/NodeEditor.hpp
+        Include/Ui/AttributeEditor.hpp
     PRIVATE_HEADERS
 
     PUBLIC_LIBS
