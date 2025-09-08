@@ -1,7 +1,9 @@
 #ifndef CF_UI_ATTRIBUTEEDITOR_HPP
 #define CF_UI_ATTRIBUTEEDITOR_HPP
 
+#include "Core/Scene.hpp"
 #include <QWidget>
+#include <QVBoxLayout>
 
 namespace cf::ui
 {
@@ -14,8 +16,15 @@ public:
     ~AttributeEditor() override;
 
 public slots:
-    void onSelectionChanged();
+    void onSelectionChanged(const std::vector<std::shared_ptr<core::Node>>& selectedNodes);
+
+private:
+    void clearAttributes();
+    void displayNodeAttributes(std::shared_ptr<core::Node> node);
     
+
+    QVBoxLayout* m_rootLayout = nullptr;
+    QWidget* m_attributesContainer = nullptr;
 };
 
 

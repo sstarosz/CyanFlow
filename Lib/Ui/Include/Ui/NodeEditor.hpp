@@ -189,6 +189,7 @@ public:
 
     void populateScene();
 
+
 protected:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
 

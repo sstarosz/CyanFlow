@@ -1,5 +1,6 @@
 #include "NodeEditor.hpp"
 #include "Core/TypeRegistry.hpp"
+#include "SelectionManager.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -89,6 +90,18 @@ NodeScene::NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent)
     , m_scene(scene)
 {
     setSceneRect(-sceneWidth, -sceneHeight, 2 * sceneWidth, 2 * sceneHeight);
+
+    connect(this, &QGraphicsScene::selectionChanged, [this]() {
+        std::vector<std::shared_ptr<core::Node>> selectedNodes;
+
+        for (auto item : selectedItems()) {
+            if (auto nodeItem = dynamic_cast<NodeItem*>(item)) {
+                selectedNodes.push_back(nodeItem->getNode());
+            }
+        }
+
+        SelectionManager::getInstance().setSelection(selectedNodes);
+    });
 }
 
 void NodeScene::populateScene()

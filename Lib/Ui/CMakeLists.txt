@@ -11,11 +11,14 @@ AddLibrary(
         Source/GuiManager.cpp
         Source/NodeEditor.cpp
         Source/AttributeEditor.cpp
+        Source/SelectionManager.cpp
+        
     PUBLIC_HEADERS
         Include/Ui/MainWindow.hpp
         Include/Ui/GuiManager.hpp
         Include/Ui/NodeEditor.hpp
         Include/Ui/AttributeEditor.hpp
+        Include/Ui/SelectionManager.hpp
     PRIVATE_HEADERS
 
     PUBLIC_LIBS
