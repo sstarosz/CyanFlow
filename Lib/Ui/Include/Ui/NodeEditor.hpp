@@ -131,8 +131,7 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     ;
 
     public:
-    NodeAttribute(std::shared_ptr<core::Attribute> attribute, 
-                  core::AttributeDescriptor m_attributeDesc,
+    NodeAttribute(std::shared_ptr<core::Attribute> attribute,
                   QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
@@ -153,7 +152,6 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
 
     private:
     std::shared_ptr<core::Attribute> m_attribute; // Handler to Attribute
-    core::AttributeDescriptor m_attributeDesc;
     NodePlug* m_pInputPlug;
     NodePlug* m_pOutputPlug;
 };

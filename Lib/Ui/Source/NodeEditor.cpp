@@ -33,9 +33,7 @@ NodeItem::NodeItem(QtNode* m_qtNode,
     uint32_t inputYOffset = 55;
     const auto& attributes = scene->getNodeAttributes(node);
     for (const auto& attr : attributes) {
-        core::AttributeDescriptor attrDesc = attr->getAttributeDescriptor();
-
-        NodeAttribute* attributeItem = new NodeAttribute(attr, attrDesc, this);
+        NodeAttribute* attributeItem = new NodeAttribute(attr, this);
             attributeItem->setZValue(zValue() + 1);
             attributeItem->setPos(-10, inputYOffset);
             m_attributes.push_back(attributeItem);
@@ -468,14 +466,13 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
 /*-------------MARK: NodeAttribute-----------*/
 /*-------------------------------------------*/
 NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
-    core::AttributeDescriptor m_attributeDesc,
     QGraphicsItem* parent)
     : QAbstractGraphicsShapeItem(parent)
     , m_attribute(attribute)
-    , m_attributeDesc(m_attributeDesc)
 {
     // Draw connection Input
-    if (m_attributeDesc.role == core::AttributeRole::eInput || m_attributeDesc.role == core::AttributeRole::eInOut)
+    core::AttributeRole role = m_attribute->getAttributeDescriptor().role;
+    if (role == core::AttributeRole::eInput || role == core::AttributeRole::eInOut)
     {
         NodePlug* nodePlug = new NodePlug(this);
         nodePlug->setPos(0, 0);
@@ -484,7 +481,7 @@ NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
     }
 
     // Draw Connection Output
-    if (m_attributeDesc.role == core::AttributeRole::eOutput || m_attributeDesc.role == core::AttributeRole::eInOut)
+    if (role == core::AttributeRole::eOutput || role == core::AttributeRole::eInOut)
     {
         //TODO validate transform
         NodePlug* nodePlug = new NodePlug(this);
@@ -522,22 +519,23 @@ void NodeAttribute::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     painter->setBrush(nodeConnectionColor);
 
     // Draw connection input
-    if (m_attributeDesc.role == core::AttributeRole::eInput || m_attributeDesc.role == core::AttributeRole::eInOut) {
+    core::AttributeRole role = m_attribute->getAttributeDescriptor().role;
+    if (role == core::AttributeRole::eInput || role == core::AttributeRole::eInOut) {
         painter->drawRect(20, 0, 5, 25);
     }
 
     // Draw connection output
-    if (m_attributeDesc.role == core::AttributeRole::eOutput || m_attributeDesc.role == core::AttributeRole::eInOut) {
+    if (role == core::AttributeRole::eOutput || role == core::AttributeRole::eInOut) {
         painter->drawRect(295, 0, 5, 25);
     }
 
     // Draw text
+    QString text = QString::fromStdString(m_attribute->getAttributeDescriptor().name);
     painter->setPen(Qt::white);
     painter->setFont(QFont("Inter", 12));
     QRectF textRect { 45, 5, 230, 15 };
     painter->drawText(textRect,
-        Qt::AlignLeft | Qt::AlignVCenter,
-        QString::fromStdString(m_attributeDesc.name));
+        Qt::AlignLeft | Qt::AlignVCenter,text);
 
 }
 
@@ -553,7 +551,7 @@ std::shared_ptr<core::Attribute> NodeAttribute::getAttribute() const
 
 core::AttributeDescriptor NodeAttribute::getAttributeDescriptor() const
 {
-    return m_attributeDesc;
+    return m_attribute->getAttributeDescriptor();
 }   
 
 NodePlug* NodeAttribute::getInputPlug() const
