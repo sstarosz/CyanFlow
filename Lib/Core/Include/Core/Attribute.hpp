@@ -18,19 +18,19 @@ static constexpr AttributeHandle kInvalidAttributeHandle = 0;
 class Attribute {
 public:
     Attribute()
-        : m_typeHandle(kInvalidTypeHandle)
-        , handle(kInvalidAttributeHandle)
+        : handle(kInvalidAttributeHandle)
+        , m_descriptorHandle(kInvalidAttributeHandle)
         , data(nullptr)
     {
     }
 
     // TODO: Is the handle necessary here? Can we simplify this?
     Attribute(AttributeDescriptor desc, AttributeHandle attributeHandle)
-        : m_typeHandle(desc.handle)
-        , handle(attributeHandle)
+        : handle(attributeHandle)
+        , m_descriptorHandle(desc.handle)
         , data(nullptr)
     {
-        data = TypeRegistry::getTypeDescriptor(desc.handle).create();
+        data = TypeRegistry::getTypeDescriptor(desc.typeHandle).create();
     }
 
 
@@ -39,7 +39,7 @@ public:
     {
         //TODO: Implement destruction of different data types
         if (data) {
-            TypeRegistry::getTypeDescriptor(m_typeHandle).destroy(data);
+            TypeRegistry::getTypeDescriptor(getAttributeDescriptor().typeHandle).destroy(data);
             data = nullptr;
         }
     }
@@ -50,7 +50,7 @@ public:
         if (!data)
             throw std::runtime_error("Null data pointer in Attribute::getValue");
 
-        if (m_typeHandle != TypeRegistry::getTypeHandle<Type>())
+        if (getTypeHandle() != TypeRegistry::getTypeHandle<Type>())
             throw std::runtime_error("Type mismatch in Attribute::getValue");
 
         return *static_cast<Type*>(data);
@@ -62,7 +62,7 @@ public:
         if (!data)
             throw std::runtime_error("Null data pointer in Attribute::setValue");
 
-        if (m_typeHandle != TypeRegistry::getTypeHandle<Type>())
+        if (getTypeHandle() != TypeRegistry::getTypeHandle<Type>())
             throw std::runtime_error("Type mismatch in Attribute::setValue");
 
         *static_cast<Type*>(data) = value;
@@ -75,11 +75,11 @@ public:
     void copyDataFrom(const std::shared_ptr<Attribute>& other) {
         if (!other || !other->data || !data)
             throw std::runtime_error("Null data pointer in copyDataFrom");
-        if (m_typeHandle != other->m_typeHandle)
+        if (getTypeHandle() != other->getTypeHandle())
             throw std::runtime_error("Type mismatch in copyDataFrom");
 
         // Use reflection to copy the data
-        const auto& typeDesc = TypeRegistry::getTypeDescriptor(m_typeHandle);
+        const auto& typeDesc = TypeRegistry::getTypeDescriptor(getTypeHandle());
         typeDesc.copy(data, other->data);
 
         //TODO: Publish event
@@ -89,12 +89,16 @@ public:
 
 
     AttributeHandle getHandle() const { return handle; }
+    TypeHandle getTypeHandle() const { return getAttributeDescriptor().typeHandle; }
 
-    TypeHandle getType() const { return m_typeHandle; }
+    const AttributeDescriptor getAttributeDescriptor() const
+    {
+        return TypeRegistry::getAttributeDescriptor(m_descriptorHandle);
+    }
 
 private:
-    TypeHandle m_typeHandle;
     AttributeHandle handle { kInvalidAttributeHandle };
+    AttributeDescriptorHandle m_descriptorHandle { kInvalidAttributeHandle };
     void* data { nullptr };
 };
 

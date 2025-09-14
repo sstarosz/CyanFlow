@@ -1,5 +1,6 @@
 #include "AttributeEditor.hpp"
 #include "SelectionManager.hpp"
+#include "Core/TypeRegistry.hpp"
 
 #include <QLabel>
 #include <QFormLayout>
@@ -45,6 +46,12 @@ void AttributeEditor::displayNodeAttributes(std::shared_ptr<core::Node> node)
 
     // Example fields – extend with real attributes from your core::Scene
     form->addRow(new QLabel("Name:"), new QLabel(QString::fromStdString(node->getName())));
+
+    core::NodeDescriptor desc = core::TypeRegistry::getNodeDescriptor(node->getType());
+    for (const auto& attrDesc : desc.attributes) {
+        form->addRow(new QLabel(QString::fromStdString(attrDesc.name)), new QLabel("Value")); // Placeholder for value
+    }
+
 
     
 

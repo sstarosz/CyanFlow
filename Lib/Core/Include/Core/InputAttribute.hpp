@@ -15,6 +15,7 @@ namespace cf::core {
 template <typename DataType>
 struct InputAttribute : public TypedAttribute<DataType> {
 
+
     InputAttribute() = default;
     InputAttribute(std::shared_ptr<Attribute> attribute)
         : TypedAttribute<DataType>(std::move(attribute))

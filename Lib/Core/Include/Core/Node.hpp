@@ -21,10 +21,6 @@ concept NodeConcept = requires(NodeType node) {
 };
 
 
-
-using NodeHandle = uint64_t;
-static constexpr NodeHandle kInvalidNodeHandle = 0;
-
 class Node {
 public:
     virtual ~Node() = default;
@@ -39,6 +35,35 @@ public:
 private:
     NodeHandle m_handle = kInvalidNodeHandle;
     std::string m_name = "Unnamed Node";
+};
+
+template<typename DerivedNodeType>
+class NodeBase : public Node {
+public:
+    using derived_type = DerivedNodeType;
+
+    static NodeDescriptor getStaticDescriptor()
+    {
+        static NodeDescriptor descriptor = DerivedNodeType::initialize();
+        return descriptor;
+    }
+
+    TypeHandle getType() const override
+    {
+        return TypeRegistry::getNodeDescriptorHandle<DerivedNodeType>();
+    }
+
+    template<typename MemberPtr>
+    static AttributeDescriptor addInputAttributeDescriptor(MemberPtr member, std::string name)
+    {
+        return TypeRegistry::addAttributeDescriptor<DerivedNodeType, MemberPtr, AttributeRole::eInput>(member, name);
+    }
+
+    template<typename MemberPtr>
+    static AttributeDescriptor addOutputAttributeDescriptor(MemberPtr member, std::string name)
+    {
+        return TypeRegistry::addAttributeDescriptor<DerivedNodeType, MemberPtr, AttributeRole::eOutput>(member, name);
+    }
 };
 
 } // namespace cf::core

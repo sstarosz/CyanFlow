@@ -2,6 +2,7 @@
 #define CF_UI_NODEEDITOR_HPP
 
 #include "Core/Scene.hpp"
+#include "Core/Document.hpp"
 
 #include <QAbstractGraphicsShapeItem>
 #include <QGraphicsItem>
@@ -11,8 +12,43 @@
 
 #include <QMenuBar>
 #include <QWidget>
+#include <QPointer>
 
 namespace cf::ui {
+
+class NodeEditorModel : public QObject {
+    Q_OBJECT
+public:
+    NodeEditorModel(std::shared_ptr<core::Scene> scene, QObject* parent = nullptr)
+        : QObject(parent), m_scene(scene) {}
+
+    std::shared_ptr<core::Scene> getScene() const { return m_scene; }
+    void setScene(std::shared_ptr<core::Scene> scene) { m_scene = scene; }
+private:
+    std::shared_ptr<core::Scene> m_scene;
+};
+
+class QtAttribute {
+    
+
+
+};
+
+
+//Model class over core::Node
+class QtNode : public QObject{
+    Q_OBJECT
+public:
+    explicit QtNode(std::shared_ptr<core::Node> node, QObject* parent = nullptr)
+        : QObject(parent), m_node(node) {}
+
+    QString getName() const { return QString::fromStdString(m_node->getName()); }
+    void setName(const QString& name) { m_node->setName(name.toStdString()); }
+
+private:
+    std::shared_ptr<core::Node> m_node;
+};
+
 
 // #373B3E
 constexpr QColor NodeColor = QColor(55, 59, 62);
@@ -131,7 +167,11 @@ class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t HeaderRadius = 20;
 
 public:
-    NodeItem(std::shared_ptr<core::Scene> scene, std::shared_ptr<core::Node> node, QGraphicsItem* parent = nullptr);
+    NodeItem(QtNode* m_qtNode,
+             std::shared_ptr<core::Scene> scene, 
+             std::shared_ptr<core::Node> node, 
+             QGraphicsItem* parent = nullptr);
+
 
     virtual QRectF boundingRect() const override;
 
@@ -145,6 +185,8 @@ private:
     std::shared_ptr<core::Scene> m_scene;
     std::shared_ptr<core::Node> m_node;
     std::vector<NodeAttribute*> m_attributes;
+
+    QtNode* m_qtNode;
 };
 
 class ConnectionItem : public QGraphicsPathItem {
@@ -204,6 +246,7 @@ private:
     std::shared_ptr<core::Scene> m_scene;
     std::vector<NodeItem*> m_nodeItems;
     std::vector<ConnectionItem*> m_connectionItems;
+    std::vector<QPointer<QtNode>> m_qtNodes;
 
     DragMode m_dragMode = DragMode::None;
 
@@ -251,6 +294,8 @@ private:
     QMenuBar* m_menuBar;
     NodeGraphView* m_graphView;
     std::shared_ptr<core::Scene> m_scene;
+    //std::shared_ptr<core::Document> m_
+    NodeEditorModel* m_model;
 };
 
 } // namespace cf::ui

@@ -42,8 +42,8 @@ public:
 
             spdlog::info("Created attribute '{}' with handle {} for node '{}'", 
                 attrDesc.name, attribute->getHandle(), m_nodes[handle]->getName());
+
             nodeAttributes[attribute->getHandle()] = handle;
-            attributeDescriptors[attribute->getHandle()] = attrDesc;
         }
 
         return std::static_pointer_cast<NodeType>(m_nodes[handle]);
@@ -115,16 +115,6 @@ public:
         }
     }
 
-    //TODO: should AttributeDescriptor be stored in Scene?
-    AttributeDescriptor getAttributeDescriptor(AttributeHandle handle) const
-    {
-        auto it = attributeDescriptors.find(handle);
-        if (it != attributeDescriptors.end()) {
-            return it->second;
-        }
-        throw std::runtime_error("Attribute descriptor not found for handle: " + std::to_string(handle));
-    }
-
 private:
     NodeHandle generateNodeHandle() { return m_nextNodeHandle++; }
 
@@ -148,7 +138,6 @@ private:
     std::unordered_map<NodeHandle, std::shared_ptr<Node>> m_nodes;
     std::unordered_map<AttributeHandle, std::shared_ptr<Attribute>> attributes;
     std::unordered_map<AttributeHandle, NodeHandle> nodeAttributes;
-    std::unordered_map<AttributeHandle, AttributeDescriptor> attributeDescriptors;
     std::vector<Connection> connections;
 };
 

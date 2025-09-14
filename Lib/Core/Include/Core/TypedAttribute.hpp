@@ -9,6 +9,8 @@ namespace cf::core {
 template <typename DataType>
 struct TypedAttribute  {
 public:
+    using ValueType = DataType;
+
     TypedAttribute () = default;
     TypedAttribute (std::shared_ptr<Attribute> attribute)
         : ptrToAttribute(std::move(attribute))
@@ -17,7 +19,7 @@ public:
             throw std::runtime_error("Null attribute pointer in TypedAttribute ");
         }
 
-        if (ptrToAttribute->getType() != TypeRegistry::getTypeHandle<DataType>()) {
+        if (ptrToAttribute->getTypeHandle() != TypeRegistry::getTypeHandle<DataType>()) {
             throw std::runtime_error("Data type mismatch in TypedAttribute ");
         }
     }

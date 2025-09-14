@@ -11,8 +11,36 @@ namespace cf::core {
 
 namespace {
     //TODO: Use better type id generation
-    inline std::atomic<uint64_t> global_type_id_counter { 0 };
+    inline std::atomic<uint64_t> global_type_id_counter { 1 };
+    inline std::atomic<uint64_t> global_attribute_type_id_counter { 1 };
+    inline std::atomic<uint64_t> global_node_type_id_counter { 1 };
 }
+
+
+// Type trait to extract member type from member pointer
+// For example, given &Class::member, it extracts the type of member
+template<typename T>
+struct member_type_from_member_pointer;
+
+template<typename Class, typename Member>
+struct member_type_from_member_pointer<Member Class::*> {
+    using type = Member;
+};
+
+template<typename T>
+using member_type_from_member_pointer_t = typename member_type_from_member_pointer<T>::type;
+
+// Type trait to extract the value type from an attribute type
+// For example, InputAttribute<int> -> int
+template<typename T>
+struct attribute_value_type {
+    using type = T::ValueType;
+};
+
+template<typename T>
+using attribute_value_type_t = typename attribute_value_type<T>::type;
+
+
 
 class TypeRegistry {
 public:
@@ -34,6 +62,20 @@ public:
         static const uint64_t id = global_type_id_counter++;
         return TypeHandle(id);
     }
+
+    template<typename NodeType>
+    static NodeHandle getNodeDescriptorHandle()
+    {
+        return getInstance().getNodeDescriptorHandleImpl<NodeType>();
+    }
+
+    template <typename NodeType>
+    NodeHandle getNodeDescriptorHandleImpl() const
+    {
+        static const uint64_t id = global_node_type_id_counter++;
+        return NodeHandle(id);
+    }
+
 
     template <typename Type>
     static TypeDescriptor getTypeDescriptor()
@@ -69,56 +111,6 @@ public:
     }
 
     template <typename Type>
-    static NodeDescriptor getNodeDescriptor()
-    {
-        return getInstance().getNodeDescriptorImpl<Type>();
-    }
-
-    template <typename Type>
-    NodeDescriptor getNodeDescriptorImpl() const
-    {
-        TypeHandle handle = getTypeHandle<Type>();
-        auto it = nodeMap.find(handle);
-        if (it != nodeMap.end()) {
-            return it->second;
-        }
-
-        throw std::runtime_error("Node type not registered: " + std::string(typeid(Type).name()));
-    }
-
-    static NodeDescriptor getNodeDescriptor(TypeHandle handle)
-    {
-        return getInstance().getNodeDescriptorImpl(handle);
-    }
-
-    NodeDescriptor getNodeDescriptorImpl(TypeHandle handle) const
-    {
-        auto it = nodeMap.find(handle);
-        if (it != nodeMap.end()) {
-            return it->second;
-        }
-
-        throw std::runtime_error("Node type not registered with handle: " + std::to_string(handle));
-    }
-
-    template <typename Type>
-    static void registerNodeType()
-    {
-        getInstance().registerNodeTypeImpl<Type>();
-    }
-
-    template <typename Type>
-    TypeHandle registerNodeTypeImpl()
-    {
-        TypeHandle handle = getTypeHandle<Type>();
-        NodeDescriptor desc = Type::initialize();
-
-        nodeMap[handle] = desc;
-
-        return handle;
-    }
-
-    template <typename Type>
     static void registerType(std::string_view name)
     {
         getInstance().registerTypeImpl<Type>(name);
@@ -136,6 +128,7 @@ public:
         return handle;
     }
 
+    
     template <typename Type>
     TypeDescriptor makeTypeDescriptor()
     {
@@ -174,9 +167,148 @@ public:
         return desc;
     }
 
+
+    /*-------------------------*/
+    /*--- Node Registration ---*/
+    /*-------------------------*/
+    template <typename Type>
+    static NodeDescriptor getNodeDescriptor()
+    {
+        return getInstance().getNodeDescriptorImpl<Type>();
+    }
+
+    template <typename Type>
+    NodeDescriptor getNodeDescriptorImpl() const
+    {
+        NodeDescriptorHandle handle = getNodeDescriptorHandle<Type>();
+        auto it = nodeMap.find(handle);
+        if (it != nodeMap.end()) {
+            return it->second;
+        }
+
+        throw std::runtime_error("Node type not registered: " + std::string(typeid(Type).name()));
+    }
+
+    //TODO: Make TypeHandle a strong typedef to avoid confusion
+    static NodeDescriptor getNodeDescriptor(NodeDescriptorHandle handle)
+    {
+        return getInstance().getNodeDescriptorImpl(handle);
+    }
+
+    NodeDescriptor getNodeDescriptorImpl(NodeDescriptorHandle handle) const
+    {
+        auto it = nodeMap.find(handle);
+        if (it != nodeMap.end()) {
+            return it->second;
+        }
+
+        throw std::runtime_error("Node type not registered with handle: " + std::to_string(handle));
+    }
+
+    template <typename Type>
+    static void registerNodeType()
+    {
+        getInstance().registerNodeTypeImpl<Type>();
+    }
+
+    template <typename Type>
+    NodeDescriptorHandle registerNodeTypeImpl()
+    {
+        NodeDescriptorHandle handle = getNodeDescriptorHandle<Type>();
+
+        NodeDescriptor desc = Type::initialize();
+        desc.handle = handle; 
+
+        // Register all attributes from this node type
+        for (auto& attrDesc : desc.attributes) {
+            attrDesc.handle = registerAttributeDescriptorImpl(attrDesc);
+        }
+
+        nodeMap[handle] = desc;
+
+        return handle;
+    }
+
+    /*-------------------------------*/
+    /*--- Attribute Registration ---*/
+    /*-------------------------------*/
+
+    static AttributeDescriptor getAttributeDescriptor(AttributeDescriptorHandle handle)
+    {
+        return getInstance().getAttributeDescriptorImpl(handle);
+    }
+
+    AttributeDescriptor getAttributeDescriptorImpl(AttributeDescriptorHandle handle) const
+    {
+        auto it = attributeMap.find(handle);
+        if (it != attributeMap.end()) {
+            return it->second;
+        }
+
+        throw std::runtime_error("Attribute not registered with handle: " + std::to_string(handle));
+    }
+
+    static void registerAttributeDescriptor(AttributeDescriptor& desc)
+    {
+        getInstance().registerAttributeDescriptorImpl(desc);
+    }
+
+    AttributeDescriptorHandle getAttributeDescriptorHandleImpl() const
+    {
+        return AttributeDescriptorHandle(global_attribute_type_id_counter++);
+    }
+
+    AttributeDescriptorHandle registerAttributeDescriptorImpl(AttributeDescriptor& desc)
+    {
+        AttributeDescriptorHandle handle = getAttributeDescriptorHandleImpl();
+        desc.handle = handle;
+        attributeMap[handle] = desc;
+        return handle;
+    }
+
+
+    // Specialization for nested struct members
+    template<typename NodeClassType, typename MemberPtrType,  AttributeRole role>
+    static AttributeDescriptor make_attribute_descriptor_impl(MemberPtrType member, std::string_view name)
+    {
+        // Extract the value type from the member type
+        using AttributeType = member_type_from_member_pointer_t<MemberPtrType>; 
+        using ValueType = attribute_value_type_t<AttributeType>;
+        
+        AttributeDescriptor desc;
+        desc.typeHandle = TypeRegistry::getTypeHandle<ValueType>();
+        desc.name = name;
+        desc.role = role;
+        
+        if constexpr (role == AttributeRole::eInput) {
+            desc.setter = [member](void* nodePtr, std::shared_ptr<Attribute> attribute) {
+                auto* node = static_cast<NodeClassType*>(nodePtr);
+                (node->inputs).*member = attribute;
+            };
+        } 
+        else if constexpr (role == AttributeRole::eOutput) {
+            desc.setter = [member](void* nodePtr, std::shared_ptr<Attribute> attribute) {
+                auto* node = static_cast<NodeClassType*>(nodePtr);
+                (node->outputs).*member = attribute;
+            };
+        } 
+        else {
+            throw std::runtime_error("Unsupported attribute role");
+        }
+        return desc;
+    }
+
+
+    template<typename NodeType, typename MemberPtrType, AttributeRole role>
+    static AttributeDescriptor addAttributeDescriptor(MemberPtrType member, std::string_view name)
+    {
+        return make_attribute_descriptor_impl<NodeType, MemberPtrType, role>(member, name);
+    }
+
 private:
     std::unordered_map<TypeHandle, TypeDescriptor> typeMap;
-    std::unordered_map<TypeHandle, NodeDescriptor> nodeMap;
+    std::unordered_map<AttributeDescriptorHandle, AttributeDescriptor> attributeMap;
+    std::unordered_map<NodeDescriptorHandle, NodeDescriptor> nodeMap;
 };
 
 } // namespace cf::core

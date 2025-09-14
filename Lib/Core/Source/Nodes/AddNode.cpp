@@ -8,9 +8,4 @@ Status AddNode::compute()
     return Status::eOK;
 }
 
-TypeHandle AddNode::getType() const
-{
-    return TypeRegistry::getTypeHandle<AddNode>();
-}
-
 } // namespace cf::core

@@ -4,6 +4,7 @@ AddLibrary(
     DESCRIPTION "Core library that provides essential functionalities and utilities"
     SOURCES
         Source/Scene.cpp
+        Source/Document.cpp
 
         Source/Nodes/AddNode.cpp
 
@@ -12,6 +13,7 @@ AddLibrary(
         Include/Core/TypeDescriptors.hpp
         Include/Core/TypeRegistry.hpp
         Include/Core/Node.hpp
+        Include/Core/Document.hpp
         #Nodes
         Include/Core/Nodes/AddNode.hpp
         

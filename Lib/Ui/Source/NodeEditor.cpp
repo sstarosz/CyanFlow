@@ -18,10 +18,12 @@ namespace cf::ui {
 /*-------------------------------------------*/
 /*-----------MARK: NodeItem------------------*/
 /*-------------------------------------------*/
-NodeItem::NodeItem(std::shared_ptr<core::Scene> scene,
+NodeItem::NodeItem(QtNode* m_qtNode,
+    std::shared_ptr<core::Scene> scene,
     std::shared_ptr<core::Node> node,
     QGraphicsItem* parent)
     : QAbstractGraphicsShapeItem(parent)
+    , m_qtNode(m_qtNode)
     , m_scene(scene)
     , m_node(node)
 {
@@ -31,7 +33,7 @@ NodeItem::NodeItem(std::shared_ptr<core::Scene> scene,
     uint32_t inputYOffset = 55;
     const auto& attributes = scene->getNodeAttributes(node);
     for (const auto& attr : attributes) {
-        core::AttributeDescriptor attrDesc = scene->getAttributeDescriptor(attr->getHandle());
+        core::AttributeDescriptor attrDesc = attr->getAttributeDescriptor();
 
         NodeAttribute* attributeItem = new NodeAttribute(attr, attrDesc, this);
             attributeItem->setZValue(zValue() + 1);
@@ -51,7 +53,7 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QColor borderColor = isSelected() || isUnderMouse()? NodeHighlightBorderColor : NodeBorderColor;
+    QColor borderColor = isSelected() || isUnderMouse() ? NodeHighlightBorderColor : NodeBorderColor;
     constexpr qreal borderWidth = 5.0;
 
     // 1. Draw the main body background (border)
@@ -72,8 +74,9 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     painter->setPen(Qt::white);
     painter->setFont(QFont("Inter", 24));
     QRectF textRect(30, 0, NodeWidth, HeaderHeight);
-    painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
-        QString::fromStdString(m_node->getName()));
+    painter->drawText(textRect,
+                      Qt::AlignLeft | Qt::AlignVCenter,
+                      m_qtNode->getName());
 }
 
 std::shared_ptr<core::Node> NodeItem::getNode() const
@@ -119,7 +122,10 @@ void NodeScene::populateScene()
         static qreal yOffset = -50;
         static qreal xOffset = 50;
 
-        auto nodeItem = new NodeItem(m_scene, node);
+        QtNode* qtNode = new QtNode(node, this);
+        m_qtNodes.push_back(qtNode);
+
+        auto nodeItem = new NodeItem(qtNode, m_scene, node);
         nodeItem->setPos(xOffset, yOffset);
         addItem(nodeItem);
         m_nodeItems.push_back(nodeItem);

@@ -15,6 +15,17 @@ class Attribute;
 using TypeHandle = std::uint64_t;
 constexpr TypeHandle kInvalidTypeHandle = 0;
 
+using AttributeDescriptorHandle = std::uint64_t;
+static constexpr AttributeDescriptorHandle kInvalidAttributeDescriptorHandle = 0;
+
+using NodeDescriptorHandle = std::uint64_t;
+static constexpr NodeDescriptorHandle kInvalidNodeDescriptorHandle = 0;
+
+using NodeHandle = uint64_t;
+static constexpr NodeHandle kInvalidNodeHandle = 0;
+
+
+
 
 struct TypeDescriptor
 {
@@ -36,16 +47,22 @@ enum class AttributeRole {
     eInOut     // Readable and writable (pass-through)
 };
 
+
+using AttributeSetterFunc = std::function<void(void*, std::shared_ptr<Attribute>)>;
+
 struct AttributeDescriptor {
-    TypeHandle handle;
+    AttributeDescriptorHandle handle;
+    TypeHandle typeHandle { kInvalidTypeHandle };
     std::string name { "" };
     AttributeRole role { AttributeRole::eInput };
 
-    std::function<void(void* nodePtr, std::shared_ptr<Attribute> attribute)> setter;
+    AttributeSetterFunc setter { nullptr };
 };
 
+
+
 struct NodeDescriptor {
-    TypeHandle handle;
+    NodeDescriptorHandle handle;
     std::string typeName { "" };
     std::vector<AttributeDescriptor> attributes;
 };
