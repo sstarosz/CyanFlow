@@ -3,18 +3,12 @@
 
 #include "Core/Scene.hpp"
 #include "Core/Document.hpp"
+#include "Framework/ApplicationContext.hpp"
 #include "Ui/GuiManager.hpp"
 
 #include <QApplication>
 
 namespace cf::framework {
-
-class ApplicationContext{
-public:
-
-
-    std::shared_ptr<core::Document> m_currentDocument;
-};
 
 
 class Application {
@@ -25,8 +19,7 @@ public:
 private:
     QApplication m_app;
 
-    std::shared_ptr<core::Scene> m_scene;
-    std::shared_ptr<core::Document> m_document;
+    ApplicationContext m_appContext;
 
     ui::GuiManager m_guiManager;
 };

@@ -1,5 +1,5 @@
-#ifndef CF_CORE_NODES_ADDNODE
-#define CF_CORE_NODES_ADDNODE
+#ifndef CF_CORE_NODES_ADDNODE_HPP
+#define CF_CORE_NODES_ADDNODE_HPP
 
 #include "Core/InputAttribute.hpp"
 #include "Core/Node.hpp"
@@ -56,4 +56,4 @@ public:
 
 } // namespace cf::core
 
-#endif // CF_CORE_NODES_ADDNODE
+#endif // CF_CORE_NODES_ADDNODE_HPP

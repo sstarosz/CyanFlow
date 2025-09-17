@@ -1,22 +1,21 @@
 #ifndef CF_UI_GUIMANAGER_HPP
 #define CF_UI_GUIMANAGER_HPP
 
-#include "Core/Scene.hpp"
+#include "Framework/ApplicationContext.hpp"
 #include "Ui/MainWindow.hpp"
-
-#include <memory>
+#include "Ui/QtApplicationContext.hpp"
 
 namespace cf::ui {
 class GuiManager {
 public:
-    GuiManager(std::shared_ptr<core::Scene> scene);
+    GuiManager(framework::ApplicationContext& appContext);
 
 public:
     void show();
 
 private:
+    QtApplicationContext m_qtAppContext;
     ui::MainWindow m_mainWindow;
-    std::shared_ptr<core::Scene> m_scene;
 };
 
 } // namespace cf::ui

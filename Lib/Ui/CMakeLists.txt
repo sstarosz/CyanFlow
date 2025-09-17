@@ -12,6 +12,7 @@ AddLibrary(
         Source/NodeEditor.cpp
         Source/AttributeEditor.cpp
         Source/SelectionManager.cpp
+        Source/QtApplicationContext.cpp
         
     PUBLIC_HEADERS
         Include/Ui/MainWindow.hpp
@@ -19,10 +20,12 @@ AddLibrary(
         Include/Ui/NodeEditor.hpp
         Include/Ui/AttributeEditor.hpp
         Include/Ui/SelectionManager.hpp
+        Include/Ui/QtApplicationContext.hpp
     PRIVATE_HEADERS
 
     PUBLIC_LIBS
         cf::Core
+        cf::Framework
         Qt6::Widgets
         Qt6::OpenGLWidgets
         spdlog::spdlog

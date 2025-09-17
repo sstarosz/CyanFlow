@@ -3,6 +3,8 @@
 
 #include "Core/Scene.hpp"
 #include "Core/Document.hpp"
+#include "Core/Events/ConnectionAddedEvent.hpp"
+#include "Ui/QtApplicationContext.hpp"
 
 #include <QAbstractGraphicsShapeItem>
 #include <QGraphicsItem>
@@ -28,27 +30,76 @@ private:
     std::shared_ptr<core::Scene> m_scene;
 };
 
-class QtAttribute {
+class QtAttribute : public QObject {
+    Q_OBJECT
+public:
+    explicit QtAttribute(std::shared_ptr<core::Attribute> attribute, QObject* parent = nullptr)
+        : QObject(parent), m_attribute(attribute) {}
+
+    bool isInput() const {
+        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eInput;
+    }
+
+    bool isOutput() const {
+        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eOutput;
+    }
+
+    bool isInOut() const {
+        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eInOut;
+    }
+
+    QString getName() const {
+        return QString::fromStdString(m_attribute->getAttributeDescriptor().name);
+    }
+
+    std::shared_ptr<core::Attribute> getAttribute() const {
+        return m_attribute;
+    }
+
+    core::AttributeDescriptor getAttributeDescriptor() const {
+        return m_attribute->getAttributeDescriptor();
+    }
     
-
-
+private:
+    std::shared_ptr<core::Attribute> m_attribute;
 };
 
 
 //Model class over core::Node
-class QtNode : public QObject{
+class QtNode : public QObject {
     Q_OBJECT
 public:
-    explicit QtNode(std::shared_ptr<core::Node> node, QObject* parent = nullptr)
-        : QObject(parent), m_node(node) {}
+    explicit QtNode(std::shared_ptr<core::Node> node,
+        QtApplicationContext& appContext,
+        QObject* parent = nullptr)
+        : QObject(parent)
+        , m_node(node)
+        , m_appContext(appContext)
+        , m_attributes()
+    {
+        loadAttributes();
+    }
 
     QString getName() const { return QString::fromStdString(m_node->getName()); }
     void setName(const QString& name) { m_node->setName(name.toStdString()); }
 
-private:
-    std::shared_ptr<core::Node> m_node;
-};
+    const QList<QPointer<QtAttribute>>& getAttributes() const { return m_attributes; }
 
+    std::shared_ptr<core::Node> getNode() const { return m_node; }
+private:
+    void loadAttributes()
+    {
+        auto attributes = m_appContext.getActiveScene()->getNodeAttributes(m_node);
+        for (const auto& attr : attributes) {
+            auto qtAttr = new QtAttribute(attr, this);
+            m_attributes.append(qtAttr);
+        }
+    }
+
+    std::shared_ptr<core::Node> m_node;
+    QtApplicationContext& m_appContext;
+    QList<QPointer<QtAttribute>> m_attributes;
+};
 
 // #373B3E
 constexpr QColor NodeColor = QColor(55, 59, 62);
@@ -131,7 +182,7 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     ;
 
     public:
-    NodeAttribute(std::shared_ptr<core::Attribute> attribute,
+    NodeAttribute(QtAttribute* qtAttribute,
                   QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
@@ -151,7 +202,8 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     core::AttributeDescriptor getAttributeDescriptor() const;
 
     private:
-    std::shared_ptr<core::Attribute> m_attribute; // Handler to Attribute
+    QtAttribute* m_qtAttribute; // Handler to QtAttribute
+
     NodePlug* m_pInputPlug;
     NodePlug* m_pOutputPlug;
 };
@@ -165,11 +217,7 @@ class NodeItem : public QAbstractGraphicsShapeItem {
     static constexpr int32_t HeaderRadius = 20;
 
 public:
-    NodeItem(QtNode* m_qtNode,
-             std::shared_ptr<core::Scene> scene, 
-             std::shared_ptr<core::Node> node, 
-             QGraphicsItem* parent = nullptr);
-
+    NodeItem(QtNode* m_qtNode);
 
     virtual QRectF boundingRect() const override;
 
@@ -180,11 +228,8 @@ public:
     std::shared_ptr<core::Node> getNode() const;
 
 private:
-    std::shared_ptr<core::Scene> m_scene;
-    std::shared_ptr<core::Node> m_node;
-    std::vector<NodeAttribute*> m_attributes;
-
     QtNode* m_qtNode;
+    std::vector<NodeAttribute*> m_attributes;
 };
 
 class ConnectionItem : public QGraphicsPathItem {
@@ -225,9 +270,12 @@ class NodeScene : public QGraphicsScene {
     };
 
 public:
-    explicit NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent = nullptr);
+    explicit NodeScene(QtApplicationContext& appContext, QObject* parent = nullptr);
 
     void populateScene();
+
+public slots:
+    void handleConnectionAdded(const core::ConnectionAddedEvent& event);
 
 
 protected:
@@ -241,7 +289,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
-    std::shared_ptr<core::Scene> m_scene;
+    QtApplicationContext& m_appContext;
     std::vector<NodeItem*> m_nodeItems;
     std::vector<ConnectionItem*> m_connectionItems;
     std::vector<QPointer<QtNode>> m_qtNodes;
@@ -256,7 +304,7 @@ class NodeGraphView : public QGraphicsView {
     Q_OBJECT
 
 public:
-    explicit NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent = nullptr);
+    explicit NodeGraphView(QtApplicationContext& appContext, QWidget* parent = nullptr);
 
 
     void resetView();
@@ -272,8 +320,10 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
+    QtApplicationContext& m_appContext;
+    
+    //Ui
     NodeScene* m_nodeScene;
-    std::shared_ptr<core::Scene> m_scene;
 
     bool m_isPanning = false;
     QPoint m_panStartPoint;
@@ -283,12 +333,14 @@ private:
 class NodeEditor : public QWidget {
     Q_OBJECT
 public:
-    NodeEditor(std::shared_ptr<core::Scene> scene, QWidget* parent = nullptr);
+    NodeEditor(QtApplicationContext& appContext, QWidget* parent = nullptr);
 
 protected:
     void showEvent(QShowEvent* event) override;
 
 private:
+    QtApplicationContext& m_appContext;
+
     QMenuBar* m_menuBar;
     NodeGraphView* m_graphView;
     std::shared_ptr<core::Scene> m_scene;

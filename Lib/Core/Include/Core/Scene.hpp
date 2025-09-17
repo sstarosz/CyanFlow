@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <algorithm>
 
 #include<spdlog/spdlog.h>
 
@@ -62,6 +63,27 @@ public:
 
         connections.emplace_back(
             Connection { fromNodeHandle, fromHandleAttr, toNodeHandle, toHandleAttr });
+    }
+
+    void addConnection(AttributeHandle fromAttr, AttributeHandle toAttr)
+    {
+        auto fromNodeIt = nodeAttributes.find(fromAttr);
+        auto toNodeIt = nodeAttributes.find(toAttr);
+
+        if (fromNodeIt == nodeAttributes.end() || toNodeIt == nodeAttributes.end()) {
+            spdlog::error("Scene::addConnection - Invalid attribute handle(s) provided");
+            return;
+        }
+
+        connections.emplace_back(
+            Connection { fromNodeIt->second, fromAttr, toNodeIt->second, toAttr });
+    }
+
+    void removeConnection(AttributeHandle fromAttr, AttributeHandle toAttr)
+    {
+        std::erase_if(connections, [fromAttr, toAttr](const Connection& conn) {
+            return conn.attributeSource == fromAttr && conn.attributeTarget == toAttr;
+        });
     }
 
 

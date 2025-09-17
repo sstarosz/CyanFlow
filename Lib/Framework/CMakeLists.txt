@@ -6,6 +6,7 @@ AddLibrary(
         Source/Application.cpp
     PUBLIC_HEADERS
         Include/Framework/Application.hpp
+        Include/Framework/ApplicationContext.hpp
     PRIVATE_HEADERS
 
     PUBLIC_LIBS

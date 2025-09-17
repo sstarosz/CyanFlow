@@ -1,13 +1,14 @@
 #include "Application.hpp"
 
 #include "Core/Nodes/AddNode.hpp"
+#include "Core/Events/AttributeEvent.hpp"
+#include "Core/Events/ConnectionAddedEvent.hpp"
 #include <spdlog/spdlog.h>
 
 namespace cf::framework {
 Application::Application(int argc, char* argv[])
     : m_app(argc, argv)
-    , m_scene(std::make_shared<core::Scene>())
-    , m_guiManager(m_scene)
+    , m_guiManager(m_appContext)
 {
 }
 
@@ -21,6 +22,13 @@ void registerNodeTypes()
     core::TypeRegistry::registerNodeType<core::AddNode>();
 }
 
+void registerEventTypes()
+{
+    core::TypeRegistry::registerEventType<core::AttributeEvent>("AttributeEvent", "Attribute");
+    core::TypeRegistry::registerEventType<core::ConnectionAddedEvent>("ConnectionAddedEvent", "Connection");
+    core::TypeRegistry::registerEventType<core::ConnectionRemovedEvent>("ConnectionRemovedEvent", "Connection");
+}
+
 
 int Application::run()
 {
@@ -29,12 +37,15 @@ int Application::run()
     registerTypes();
     registerNodeTypes();
 
+    m_appContext.createNewDocument();
+    m_appContext.getCurrentDocument()->createNewScene();
 
 
-    auto nodeA = m_scene->addNode(std::make_unique<core::AddNode>());
-    auto nodeB = m_scene->addNode(std::make_unique<core::AddNode>());
+    auto nodeA = m_appContext.getActiveScene()->addNode(std::make_unique<core::AddNode>());
+    auto nodeB = m_appContext.getActiveScene()->addNode(std::make_unique<core::AddNode>());
 
-    m_scene->connect<float>(nodeA, nodeA->outputs.result, nodeB, nodeB->inputs.input1);
+    m_appContext.getActiveScene()->connect(nodeA, nodeA->outputs.result, nodeB, nodeB->inputs.input1);
+
     
 
     m_guiManager.show();

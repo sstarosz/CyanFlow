@@ -1,7 +1,7 @@
 #ifndef CF_UI_MAINWINDOW_HPP
 #define CF_UI_MAINWINDOW_HPP
 
-#include "Core/Scene.hpp"
+#include "Ui/QtApplicationContext.hpp"
 #include <QMainWindow>
 
 namespace cf::ui {
@@ -10,12 +10,12 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(std::shared_ptr<core::Scene> scene,
+    explicit MainWindow(QtApplicationContext& appContext,
         QWidget* parent = nullptr,
         Qt::WindowFlags flags = {});
 
 private:
-    std::shared_ptr<core::Scene> m_scene;
+    QtApplicationContext& m_appContext;
 };
 
 } // namespace cf::ui

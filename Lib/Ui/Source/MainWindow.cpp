@@ -1,6 +1,6 @@
 #include "MainWindow.hpp"
-#include "NodeEditor.hpp"
 #include "AttributeEditor.hpp"
+#include "NodeEditor.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -9,10 +9,12 @@
 #include <spdlog/spdlog.h>
 
 namespace cf::ui {
-MainWindow::MainWindow(std::shared_ptr<core::Scene> scene,
+    
+MainWindow::MainWindow(QtApplicationContext& appContext,
     QWidget* parent,
     Qt::WindowFlags flags)
     : QMainWindow(parent, flags)
+    , m_appContext(appContext)
 {
     spdlog::info("MainWindow::MainWindow()");
 
@@ -36,7 +38,7 @@ MainWindow::MainWindow(std::shared_ptr<core::Scene> scene,
     splitter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
     splitter->addWidget(topBarWidget);
 
-    ui::NodeEditor* nodeEditor = new ui::NodeEditor(scene, this);
+    ui::NodeEditor* nodeEditor = new ui::NodeEditor(appContext, this);
     ui::AttributeEditor* attributeEditor = new ui::AttributeEditor(this);
     QSplitter* nodeEditorSpliter = new QSplitter(Qt::Horizontal, this);
     nodeEditorSpliter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");

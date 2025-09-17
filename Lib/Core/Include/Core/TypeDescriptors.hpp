@@ -12,19 +12,21 @@ namespace cf::core {
 
 class Attribute;
 
+//Type
 using TypeHandle = std::uint64_t;
 constexpr TypeHandle kInvalidTypeHandle = 0;
 
+//Attribute
 using AttributeDescriptorHandle = std::uint64_t;
 static constexpr AttributeDescriptorHandle kInvalidAttributeDescriptorHandle = 0;
 
+//Node
 using NodeDescriptorHandle = std::uint64_t;
 static constexpr NodeDescriptorHandle kInvalidNodeDescriptorHandle = 0;
 
-using NodeHandle = uint64_t;
-static constexpr NodeHandle kInvalidNodeHandle = 0;
-
-
+//Event
+using EventDescriptorHandle = std::uint64_t;
+static constexpr EventDescriptorHandle kInvalidEventDescriptorHandle = 0;
 
 
 struct TypeDescriptor
@@ -60,12 +62,18 @@ struct AttributeDescriptor {
 };
 
 
-
 struct NodeDescriptor {
     NodeDescriptorHandle handle;
     std::string typeName { "" };
     std::vector<AttributeDescriptor> attributes;
 };
+
+struct EventDescriptor {
+    EventDescriptorHandle handle;
+    std::string name;
+    std::string category;
+};
+
 
 } // namespace cf::core
 

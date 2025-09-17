@@ -14,6 +14,7 @@ namespace {
     inline std::atomic<uint64_t> global_type_id_counter { 1 };
     inline std::atomic<uint64_t> global_attribute_type_id_counter { 1 };
     inline std::atomic<uint64_t> global_node_type_id_counter { 1 };
+    inline std::atomic<uint64_t> global_event_type_id_counter { 1 };
 }
 
 
@@ -64,16 +65,16 @@ public:
     }
 
     template<typename NodeType>
-    static NodeHandle getNodeDescriptorHandle()
+    static NodeDescriptorHandle getNodeDescriptorHandle()
     {
         return getInstance().getNodeDescriptorHandleImpl<NodeType>();
     }
 
     template <typename NodeType>
-    NodeHandle getNodeDescriptorHandleImpl() const
+    NodeDescriptorHandle getNodeDescriptorHandleImpl() const
     {
         static const uint64_t id = global_node_type_id_counter++;
-        return NodeHandle(id);
+        return NodeDescriptorHandle(id);
     }
 
 
@@ -230,7 +231,7 @@ public:
     }
 
     /*-------------------------------*/
-    /*--- Attribute Registration ---*/
+    /*--- Attribute Registration ----*/
     /*-------------------------------*/
 
     static AttributeDescriptor getAttributeDescriptor(AttributeDescriptorHandle handle)
@@ -305,10 +306,88 @@ public:
         return make_attribute_descriptor_impl<NodeType, MemberPtrType, role>(member, name);
     }
 
+    /*--------------------------*/
+    /*--- Event Registration ---*/
+    /*--------------------------*/
+    template <typename EventType>
+    static EventDescriptorHandle getEventDescriptorHandle() {
+        return getInstance().getEventDescriptorHandleImpl<EventType>();
+    }
+
+    template <typename EventType>
+    EventDescriptorHandle getEventDescriptorHandleImpl() const {
+        static const uint64_t id = global_event_type_id_counter++;
+        return EventDescriptorHandle(id);
+    }
+
+    template <typename Type>
+    static EventDescriptor getEventDescriptor()
+    {
+        return getInstance().getEventDescriptorImpl<Type>();
+    }
+
+    template <typename Type>
+    EventDescriptor getEventDescriptorImpl() const
+    {
+        EventDescriptorHandle handle = getEventDescriptorHandle<Type>();
+        auto it = eventMap.find(handle);
+        if (it != eventMap.end()) {
+            return it->second;
+        }
+
+        throw std::runtime_error("Event type not registered: " + std::string(typeid(Type).name()));
+    }
+
+    static EventDescriptor getEventDescriptor(EventDescriptorHandle handle) {
+        return getInstance().getEventDescriptorImpl(handle);
+    }
+
+    EventDescriptor getEventDescriptorImpl(EventDescriptorHandle handle) const {
+        auto it = eventMap.find(handle);
+        if (it != eventMap.end()) {
+            return it->second;
+        }
+        throw std::runtime_error("Event not registered with handle: " + std::to_string(handle));
+    }
+
+    template <typename EventType>
+    static void registerEventType(std::string_view name, std::string_view category = "") {
+        getInstance().registerEventTypeImpl<EventType>(name, category);
+    }
+
+    template <typename EventType>
+    EventDescriptorHandle registerEventTypeImpl(std::string_view name, std::string_view category = "") {
+        EventDescriptor desc;
+        desc.name = name;
+        desc.category = category;
+        
+        EventDescriptorHandle handle = getEventDescriptorHandle<EventType>();
+        desc.handle = handle;
+        
+        eventMap[handle] = desc;
+        return handle;
+    }
+
+    // Get all events in a category
+    static std::vector<EventDescriptor> getEventsInCategory(std::string_view category) {
+        return getInstance().getEventsInCategoryImpl(category);
+    }
+
+    std::vector<EventDescriptor> getEventsInCategoryImpl(std::string_view category) const {
+        std::vector<EventDescriptor> result;
+        for (const auto& [handle, descriptor] : eventMap) {
+            if (descriptor.category == category) {
+                result.push_back(descriptor);
+            }
+        }
+        return result;
+    }
+
 private:
     std::unordered_map<TypeHandle, TypeDescriptor> typeMap;
     std::unordered_map<AttributeDescriptorHandle, AttributeDescriptor> attributeMap;
     std::unordered_map<NodeDescriptorHandle, NodeDescriptor> nodeMap;
+    std::unordered_map<EventDescriptorHandle, EventDescriptor> eventMap;
 };
 
 } // namespace cf::core

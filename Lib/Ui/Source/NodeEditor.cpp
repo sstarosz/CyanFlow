@@ -1,5 +1,6 @@
 #include "NodeEditor.hpp"
 #include "Core/TypeRegistry.hpp"
+#include "Core/Commands/AddConnectionCommand.hpp"
 #include "SelectionManager.hpp"
 
 #include <QHBoxLayout>
@@ -18,26 +19,20 @@ namespace cf::ui {
 /*-------------------------------------------*/
 /*-----------MARK: NodeItem------------------*/
 /*-------------------------------------------*/
-NodeItem::NodeItem(QtNode* m_qtNode,
-    std::shared_ptr<core::Scene> scene,
-    std::shared_ptr<core::Node> node,
-    QGraphicsItem* parent)
-    : QAbstractGraphicsShapeItem(parent)
+NodeItem::NodeItem(QtNode* m_qtNode)
+    : QAbstractGraphicsShapeItem(nullptr)
     , m_qtNode(m_qtNode)
-    , m_scene(scene)
-    , m_node(node)
 {
     setAcceptHoverEvents(true);
     setFlags(flags() | QGraphicsItem::ItemIsSelectable);
 
     uint32_t inputYOffset = 55;
-    const auto& attributes = scene->getNodeAttributes(node);
-    for (const auto& attr : attributes) {
+    for(const auto& attr : m_qtNode->getAttributes()){
         NodeAttribute* attributeItem = new NodeAttribute(attr, this);
-            attributeItem->setZValue(zValue() + 1);
-            attributeItem->setPos(-10, inputYOffset);
-            m_attributes.push_back(attributeItem);
-            inputYOffset += 29;
+        attributeItem->setZValue(zValue() + 1);
+        attributeItem->setPos(-10, inputYOffset);
+        m_attributes.push_back(attributeItem);
+        inputYOffset += 29;
     }
 }
 
@@ -79,16 +74,16 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
 
 std::shared_ptr<core::Node> NodeItem::getNode() const
 {
-    return m_node;
+    return m_qtNode->getNode();
 }
 
 /*-------------------------------------------*/
 /*-----------MARK: NodeScene------------------*/
 /*-------------------------------------------*/
 
-NodeScene::NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent)
+NodeScene::NodeScene(QtApplicationContext& appContext, QObject* parent)
     : QGraphicsScene(parent)
-    , m_scene(scene)
+    , m_appContext(appContext)
 {
     setSceneRect(-sceneWidth, -sceneHeight, 2 * sceneWidth, 2 * sceneHeight);
 
@@ -103,27 +98,26 @@ NodeScene::NodeScene(std::shared_ptr<core::Scene> scene, QObject* parent)
 
         SelectionManager::getInstance().setSelection(selectedNodes);
     });
+
+    connect(&m_appContext, &QtApplicationContext::connectionAdded, this, &NodeScene::handleConnectionAdded);
+
 }
 
 void NodeScene::populateScene()
 {
     clear();
 
-    if (!m_scene) {
-        spdlog::error("NodeScene::populateScene - Scene is null");
-        return;
-    }
 
     //Draw Nodes
-    const auto& nodes = m_scene->getNodes();
+    const auto& nodes = m_appContext.getActiveScene()->getNodes();
     for (const auto& [nodeHandler, node] : nodes) {
         static qreal yOffset = -50;
         static qreal xOffset = 50;
 
-        QtNode* qtNode = new QtNode(node, this);
+        QtNode* qtNode = new QtNode(node, m_appContext, this);
         m_qtNodes.push_back(qtNode);
 
-        auto nodeItem = new NodeItem(qtNode, m_scene, node);
+        auto nodeItem = new NodeItem(qtNode);
         nodeItem->setPos(xOffset, yOffset);
         addItem(nodeItem);
         m_nodeItems.push_back(nodeItem);
@@ -132,7 +126,7 @@ void NodeScene::populateScene()
     }
 
     // Draw Connections
-    const auto& connections = m_scene->getConnections();
+    const auto& connections = m_appContext.getActiveScene()->getConnections();
     for (const auto& connection : connections) {
         auto fromNodeIt = nodes.find(connection.nodeSource);
         auto toNodeIt = nodes.find(connection.nodeTarget);
@@ -166,22 +160,9 @@ void NodeScene::populateScene()
         NodeAttribute* fromAttrItem = nullptr;
         NodeAttribute* toAttrItem = nullptr;
 
-        spdlog::info("Finding attributes for connection: {} -> {}", connection.attributeSource, connection.attributeTarget);
-        spdlog::info("Number of child items in fromNodeItem: {}", fromNodeItem->childItems().size());
-
         for (auto attrItem : fromNodeItem->childItems()) {
             if (auto nodeAttr = dynamic_cast<NodeAttribute*>(attrItem)) {
-
-                spdlog::info("Checking attribute: {}, {}",  static_cast<void*>(nodeAttr->getAttribute().get()), nodeAttr->getAttribute()->getHandle());
-                spdlog::info("Attribute name: {}", nodeAttr->getAttributeDescriptor().name);         
-            }
-        }
-
-        for (auto attrItem : fromNodeItem->childItems()) {
-            if (auto nodeAttr = dynamic_cast<NodeAttribute*>(attrItem)) {
-                spdlog::info("Checking attribute: {}, {}",  static_cast<void*>(nodeAttr->getAttribute().get()), nodeAttr->getAttribute()->getHandle());
-                spdlog::info("Looking for attribute: {}, {}", static_cast<void*>(m_scene->getAttribute(connection.attributeSource).get()), m_scene->getAttribute(connection.attributeSource)->getHandle());
-                if (nodeAttr->getAttribute() == m_scene->getAttribute(connection.attributeSource)) {
+                if (nodeAttr->getAttribute() == m_appContext.getActiveScene()->getAttribute(connection.attributeSource)) {
                     fromAttrItem = nodeAttr;
                     break;
                 }
@@ -190,7 +171,7 @@ void NodeScene::populateScene()
 
         for(auto attrItem : toNodeItem->childItems()) {
             if (auto nodeAttr = dynamic_cast<NodeAttribute*>(attrItem)) {
-                if (nodeAttr->getAttribute() == m_scene->getAttribute(connection.attributeTarget)) {
+                if (nodeAttr->getAttribute() == m_appContext.getActiveScene()->getAttribute(connection.attributeTarget)) {
                     toAttrItem = nodeAttr;
                     break;
                 }
@@ -316,22 +297,19 @@ void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 
 
         if (plug) {
-            
-            m_tempConnection->setEndPlug(plug);
-            m_tempConnection->updatePath();
-            m_connectionItems.push_back(m_tempConnection);
+            auto fromAttr = m_startPlug->getParentAttribute()->getAttribute()->getHandle();
+            auto toAttr = plug->getParentAttribute()->getAttribute()->getHandle();
 
+            m_appContext.execute<core::AddConnectionCommand>(m_appContext.getActiveScene(), fromAttr, toAttr);
 
-            m_startPlug->addConnection(m_tempConnection);
-            m_startPlug->endConnection();
-            m_startPlug->setConnected(true);
-
-            plug->addConnection(m_tempConnection);
-            plug->endConnection();
-            plug->setConnected(true);
-
+            removeItem(m_tempConnection);
+            delete m_tempConnection;
             m_tempConnection = nullptr;
-        } else {
+
+
+        } 
+        else {
+
             spdlog::info("NodeScene::mouseReleaseEvent - Not released on a plug, removing temp connection");
             removeItem(m_tempConnection);
             delete m_tempConnection;
@@ -350,14 +328,49 @@ void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
     }
 }
 
+NodeAttribute* findAttributeItem(QGraphicsScene* scene, core::AttributeHandle attribute) {
+    for (auto item : scene->items()) {
+        if (auto nodeItem = dynamic_cast<NodeItem*>(item)) {
+            for (auto attrItem : nodeItem->childItems()) {
+                if (auto nodeAttr = dynamic_cast<NodeAttribute*>(attrItem)) {
+                    if (nodeAttr->getAttribute()->getHandle() == attribute) {
+                        return nodeAttr;
+                    }
+                }
+            }
+        }
+    }
+    return nullptr;
+    
+}
+
+void NodeScene::handleConnectionAdded(const core::ConnectionAddedEvent& event)
+{
+    NodeAttribute* fromAttrItem = findAttributeItem(this, event.m_fromAttr);
+    NodeAttribute* toAttrItem = findAttributeItem(this, event.m_toAttr);
+
+    if (!fromAttrItem || !toAttrItem) {
+        spdlog::error("NodeScene::handleConnectionAdded - Could not find AttributeItems for connection");
+        return;
+    }
+
+    ConnectionItem* connectionItem = new ConnectionItem(fromAttrItem->getOutputPlug(), toAttrItem->getInputPlug());
+    connectionItem->setZValue(-1); // Ensure connections are drawn behind nodes
+    addItem(connectionItem);
+    m_connectionItems.push_back(connectionItem);
+
+    fromAttrItem->getOutputPlug()->setConnected(true);
+    toAttrItem->getInputPlug()->setConnected(true);
+}
+
 /*-------------------------------------------*/
 /*-----------MARK: NodeGraphView-------------*/
 /*-------------------------------------------*/
 
-NodeGraphView::NodeGraphView(std::shared_ptr<core::Scene> scene, QWidget* parent)
+NodeGraphView::NodeGraphView(QtApplicationContext& appContext, QWidget* parent)
     : QGraphicsView(parent)
-    , m_nodeScene(new NodeScene(scene, this))
-    , m_scene(scene)
+    , m_nodeScene(new NodeScene(appContext, this))
+    , m_appContext(appContext)
 {
 
     setRenderHint(QPainter::Antialiasing);
@@ -431,9 +444,9 @@ void NodeGraphView::mouseReleaseEvent(QMouseEvent* event) {
 /*-------------MARK: NodeEditor--------------*/
 /*-------------------------------------------*/
 
-NodeEditor::NodeEditor(std::shared_ptr<core::Scene> scene, QWidget* parent)
+NodeEditor::NodeEditor(QtApplicationContext& appContext, QWidget* parent)
     : QWidget(parent)
-    , m_scene(scene)
+    , m_appContext(appContext)
 {
 }
 
@@ -446,7 +459,7 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
     fileMenu->addAction("Action 2");
     fileMenu->addAction("Action 3");
 
-    m_graphView = new NodeGraphView(m_scene, this);
+    m_graphView = new NodeGraphView(m_appContext, this);
 
     QToolBar* toolBar = new QToolBar("Toolbar", this);
     toolBar->addAction("Tool 1");
@@ -465,14 +478,13 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
 /*-------------------------------------------*/
 /*-------------MARK: NodeAttribute-----------*/
 /*-------------------------------------------*/
-NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
+NodeAttribute::NodeAttribute(QtAttribute* qtAttribute,
     QGraphicsItem* parent)
     : QAbstractGraphicsShapeItem(parent)
-    , m_attribute(attribute)
+    , m_qtAttribute(qtAttribute)
 {
     // Draw connection Input
-    core::AttributeRole role = m_attribute->getAttributeDescriptor().role;
-    if (role == core::AttributeRole::eInput || role == core::AttributeRole::eInOut)
+    if (qtAttribute->isInput() || qtAttribute->isInOut())
     {
         NodePlug* nodePlug = new NodePlug(this);
         nodePlug->setPos(0, 0);
@@ -481,7 +493,7 @@ NodeAttribute::NodeAttribute(std::shared_ptr<core::Attribute> attribute,
     }
 
     // Draw Connection Output
-    if (role == core::AttributeRole::eOutput || role == core::AttributeRole::eInOut)
+    if (qtAttribute->isOutput() || qtAttribute->isInOut())
     {
         //TODO validate transform
         NodePlug* nodePlug = new NodePlug(this);
@@ -519,23 +531,21 @@ void NodeAttribute::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     painter->setBrush(nodeConnectionColor);
 
     // Draw connection input
-    core::AttributeRole role = m_attribute->getAttributeDescriptor().role;
-    if (role == core::AttributeRole::eInput || role == core::AttributeRole::eInOut) {
+    if (m_qtAttribute->isInput() || m_qtAttribute->isInOut()) {
         painter->drawRect(20, 0, 5, 25);
     }
 
     // Draw connection output
-    if (role == core::AttributeRole::eOutput || role == core::AttributeRole::eInOut) {
+    if (m_qtAttribute->isOutput() || m_qtAttribute->isInOut()) {
         painter->drawRect(295, 0, 5, 25);
     }
 
     // Draw text
-    QString text = QString::fromStdString(m_attribute->getAttributeDescriptor().name);
     painter->setPen(Qt::white);
     painter->setFont(QFont("Inter", 12));
     QRectF textRect { 45, 5, 230, 15 };
     painter->drawText(textRect,
-        Qt::AlignLeft | Qt::AlignVCenter,text);
+        Qt::AlignLeft | Qt::AlignVCenter,m_qtAttribute->getName());
 
 }
 
@@ -546,12 +556,12 @@ NodeItem* NodeAttribute::getParentNode() const
 
 std::shared_ptr<core::Attribute> NodeAttribute::getAttribute() const
 {
-    return m_attribute;
+    return m_qtAttribute->getAttribute();
 }
 
 core::AttributeDescriptor NodeAttribute::getAttributeDescriptor() const
 {
-    return m_attribute->getAttributeDescriptor();
+    return m_qtAttribute->getAttributeDescriptor();
 }   
 
 NodePlug* NodeAttribute::getInputPlug() const
