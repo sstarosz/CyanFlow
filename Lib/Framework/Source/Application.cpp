@@ -10,6 +10,7 @@ Application::Application(int argc, char* argv[])
     : m_app(argc, argv)
     , m_guiManager(m_appContext)
 {
+    spdlog::set_level(spdlog::level::debug);
 }
 
 void registerTypes()

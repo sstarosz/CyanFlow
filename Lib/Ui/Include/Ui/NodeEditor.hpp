@@ -6,6 +6,9 @@
 #include "Core/Events/ConnectionAddedEvent.hpp"
 #include "Ui/QtApplicationContext.hpp"
 
+#include "Ui/Models/QtNode.hpp"
+#include "Ui/Models/QtAttribute.hpp"
+
 #include <QAbstractGraphicsShapeItem>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
@@ -30,76 +33,6 @@ private:
     std::shared_ptr<core::Scene> m_scene;
 };
 
-class QtAttribute : public QObject {
-    Q_OBJECT
-public:
-    explicit QtAttribute(std::shared_ptr<core::Attribute> attribute, QObject* parent = nullptr)
-        : QObject(parent), m_attribute(attribute) {}
-
-    bool isInput() const {
-        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eInput;
-    }
-
-    bool isOutput() const {
-        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eOutput;
-    }
-
-    bool isInOut() const {
-        return m_attribute->getAttributeDescriptor().role == core::AttributeRole::eInOut;
-    }
-
-    QString getName() const {
-        return QString::fromStdString(m_attribute->getAttributeDescriptor().name);
-    }
-
-    std::shared_ptr<core::Attribute> getAttribute() const {
-        return m_attribute;
-    }
-
-    core::AttributeDescriptor getAttributeDescriptor() const {
-        return m_attribute->getAttributeDescriptor();
-    }
-    
-private:
-    std::shared_ptr<core::Attribute> m_attribute;
-};
-
-
-//Model class over core::Node
-class QtNode : public QObject {
-    Q_OBJECT
-public:
-    explicit QtNode(std::shared_ptr<core::Node> node,
-        QtApplicationContext& appContext,
-        QObject* parent = nullptr)
-        : QObject(parent)
-        , m_node(node)
-        , m_appContext(appContext)
-        , m_attributes()
-    {
-        loadAttributes();
-    }
-
-    QString getName() const { return QString::fromStdString(m_node->getName()); }
-    void setName(const QString& name) { m_node->setName(name.toStdString()); }
-
-    const QList<QPointer<QtAttribute>>& getAttributes() const { return m_attributes; }
-
-    std::shared_ptr<core::Node> getNode() const { return m_node; }
-private:
-    void loadAttributes()
-    {
-        auto attributes = m_appContext.getActiveScene()->getNodeAttributes(m_node);
-        for (const auto& attr : attributes) {
-            auto qtAttr = new QtAttribute(attr, this);
-            m_attributes.append(qtAttr);
-        }
-    }
-
-    std::shared_ptr<core::Node> m_node;
-    QtApplicationContext& m_appContext;
-    QList<QPointer<QtAttribute>> m_attributes;
-};
 
 // #373B3E
 constexpr QColor NodeColor = QColor(55, 59, 62);
@@ -226,6 +159,7 @@ public:
                        QWidget* widget) override;
 
     std::shared_ptr<core::Node> getNode() const;
+    QtNode* getQtNode() const { return m_qtNode; }
 
 private:
     QtNode* m_qtNode;
@@ -343,8 +277,6 @@ private:
 
     QMenuBar* m_menuBar;
     NodeGraphView* m_graphView;
-    std::shared_ptr<core::Scene> m_scene;
-    //std::shared_ptr<core::Document> m_
     NodeEditorModel* m_model;
 };
 

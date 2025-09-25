@@ -3,9 +3,11 @@
 
 #include "Core/Attribute.hpp"
 #include "Core/Node.hpp"
+#include "Core/EventBus.hpp"
 #include "Core/TypeRegistry.hpp"
 #include "Core/InputAttribute.hpp"
 #include "Core/OutputAttribute.hpp"
+#include "Core/Events/AttributeEvent.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -26,6 +28,25 @@ struct Connection {
 
 class Scene {
 public:
+    Scene()
+    {
+        EventBus::SubscriptionId subId = EventBus::subscribe<AttributeEvent>([&](const AttributeEvent& event) {
+            if (event.m_message == AttributeEvent::AttributeMessage::eAttributeChanged) {
+                evaluate();
+            }
+        });
+
+        m_subscriptions.push_back(subId);
+    }
+
+    ~Scene()
+    {
+        for (const auto& subId : m_subscriptions) {
+            EventBus::unsubscribe(subId);
+        }
+    }
+
+
     template <NodeConcept NodeType>
     std::shared_ptr<NodeType> addNode(std::unique_ptr<NodeType> node)
     {
@@ -137,6 +158,84 @@ public:
         }
     }
 
+    std::vector<std::shared_ptr<Node>> topologicalSort()
+    {
+        std::unordered_map<NodeHandle, size_t> inDegree;
+        for (const auto& [handle, node] : m_nodes) {
+            inDegree[handle] = 0;
+        }
+
+        for (const auto& conn : connections) {
+            inDegree[conn.nodeTarget]++;
+        }
+
+        std::vector<std::shared_ptr<Node>> sortedNodes;
+        std::vector<NodeHandle> zeroInDegreeNodes;
+
+        // Find nodes with zero in-degree
+        for (const auto& [handle, node] : m_nodes) {
+            if (inDegree[handle] == 0) {
+                zeroInDegreeNodes.push_back(handle);
+            }
+        }
+
+        while (!zeroInDegreeNodes.empty()) {
+            NodeHandle currentNodeHandle = zeroInDegreeNodes.back();
+            zeroInDegreeNodes.pop_back();
+
+            sortedNodes.push_back(m_nodes[currentNodeHandle]);
+
+            for (const auto& conn : connections) {
+                // Iterate through connections and reduce in-degree
+                // of all nodes that are connected to the current node
+                if (conn.nodeSource == currentNodeHandle) {
+                    inDegree[conn.nodeTarget]--;
+                    if (inDegree[conn.nodeTarget] == 0) {
+                        zeroInDegreeNodes.push_back(conn.nodeTarget);
+                    }
+                }
+            }
+        }
+
+        return sortedNodes;
+    }
+
+    void evaluate()
+    {
+        if (m_isEvaluating)
+            return;
+        m_isEvaluating = true;
+
+        std::vector<std::shared_ptr<Node>> sortedNodes = topologicalSort();
+        for (const auto& node : sortedNodes) {
+            if (node) {
+                propagateConnectionsToNode(node);
+
+                Status status = node->compute();
+                if (status != Status::eOK) {
+                    spdlog::error("Node '{}' computation failed with status: {}", node->getName(), static_cast<int>(status));
+                }
+            }
+        }
+
+        m_isEvaluating = false;
+    }
+
+    void propagateConnectionsToNode(std::shared_ptr<Node> node)
+    {
+        NodeHandle targetHandle = getNodeHandle(node);
+        for (const auto& conn : connections) {
+            if (conn.nodeTarget == targetHandle) {
+                auto fromAttr = attributes[conn.attributeSource];
+                auto toAttr = attributes[conn.attributeTarget];
+                if (fromAttr && toAttr) {           
+                    toAttr->copyDataFrom(fromAttr);
+                }
+            }
+        }
+    }
+
+
 private:
     NodeHandle generateNodeHandle() { return m_nextNodeHandle++; }
 
@@ -153,6 +252,10 @@ private:
         return attribute;
     }
 
+    bool m_isEvaluating { false };
+    uint64_t m_m_evaluationCount { 0 };
+
+
     NodeHandle m_nextNodeHandle { 1 };
     AttributeHandle nextAttributeHandle { 1 };
 
@@ -161,6 +264,9 @@ private:
     std::unordered_map<AttributeHandle, std::shared_ptr<Attribute>> attributes;
     std::unordered_map<AttributeHandle, NodeHandle> nodeAttributes;
     std::vector<Connection> connections;
+
+    std::vector<EventBus::SubscriptionId> m_subscriptions;
+
 };
 
 } // namespace cf::core

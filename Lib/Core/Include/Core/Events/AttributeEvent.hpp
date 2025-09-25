@@ -14,12 +14,12 @@ struct AttributeEvent : public Event {
     };
 
     AttributeEvent(AttributeMessage msg, AttributeHandle handler) : m_message(msg),
-        m_handler(handler)
+        attributeHandle(handler)
     {
     }
 
     AttributeMessage m_message;
-    AttributeHandle m_handler;
+    AttributeHandle attributeHandle { kInvalidAttributeHandle };
 };
 
 } // namespace cf::core

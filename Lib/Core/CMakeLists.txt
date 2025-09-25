@@ -6,6 +6,7 @@ AddLibrary(
         Source/Scene.cpp
         Source/Document.cpp
         Source/Command.cpp
+        Source/Attribute.cpp
 
         Source/Nodes/AddNode.cpp
     PUBLIC_HEADERS

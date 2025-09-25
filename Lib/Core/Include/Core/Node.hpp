@@ -30,6 +30,7 @@ public:
     virtual TypeHandle getType() const = 0;
 
     NodeHandle getHandle() const { return m_handle; }
+    NodeDescriptor getDescriptor() const { return TypeRegistry::getNodeDescriptor(getType()); }
 
     std::string getName() const { return m_name; }
     void setName(const std::string& name) { m_name = name; }

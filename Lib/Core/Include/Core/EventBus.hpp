@@ -28,7 +28,8 @@ struct Event {
 
 struct EventBus {
     
-    using SubscriptionId = size_t;
+    using SubscriptionId = size_t; //TODO: Move to TypeDescriptors.hpp?
+    static constexpr SubscriptionId kInvalidSubscriptionId = 0;
 
     template <typename EventType>
     static SubscriptionId subscribe(std::function<void(const EventType&)> callback)
@@ -81,6 +82,8 @@ struct EventBus {
 
     void unsubscribeImpl(SubscriptionId id)
     {
+        assert(id != kInvalidSubscriptionId && "Invalid subscription ID");
+
         for (auto& [type, callbacks] : m_callbacks) {
             std::erase_if(callbacks, [id](const CallbackPair& pair) { return pair.first == id; });
         }

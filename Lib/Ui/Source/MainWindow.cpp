@@ -39,7 +39,7 @@ MainWindow::MainWindow(QtApplicationContext& appContext,
     splitter->addWidget(topBarWidget);
 
     ui::NodeEditor* nodeEditor = new ui::NodeEditor(appContext, this);
-    ui::AttributeEditor* attributeEditor = new ui::AttributeEditor(this);
+    ui::AttributeEditor* attributeEditor = new ui::AttributeEditor(appContext, this);
     QSplitter* nodeEditorSpliter = new QSplitter(Qt::Horizontal, this);
     nodeEditorSpliter->setStyleSheet("QSplitter::handle { background-color: lightgray; }");
     nodeEditorSpliter->addWidget(nodeEditor);

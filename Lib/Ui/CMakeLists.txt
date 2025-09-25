@@ -13,6 +13,11 @@ AddLibrary(
         Source/AttributeEditor.cpp
         Source/SelectionManager.cpp
         Source/QtApplicationContext.cpp
+        Source/CollapsibleWidget.cpp
+
+        Source/Models/QtNode.cpp
+        Source/Models/QtAttribute.cpp
+
         
     PUBLIC_HEADERS
         Include/Ui/MainWindow.hpp
@@ -21,6 +26,10 @@ AddLibrary(
         Include/Ui/AttributeEditor.hpp
         Include/Ui/SelectionManager.hpp
         Include/Ui/QtApplicationContext.hpp
+        Include/Ui/CollapsibleWidget.hpp
+
+        Include/Ui/Models/QtNode.hpp
+        Include/Ui/Models/QtAttribute.hpp
     PRIVATE_HEADERS
 
     PUBLIC_LIBS

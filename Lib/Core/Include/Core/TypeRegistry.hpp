@@ -6,17 +6,9 @@
 #include <cstdint>
 #include <stdexcept>
 #include <unordered_map>
+#include "spdlog/spdlog.h"
 
 namespace cf::core {
-
-namespace {
-    //TODO: Use better type id generation
-    inline std::atomic<uint64_t> global_type_id_counter { 1 };
-    inline std::atomic<uint64_t> global_attribute_type_id_counter { 1 };
-    inline std::atomic<uint64_t> global_node_type_id_counter { 1 };
-    inline std::atomic<uint64_t> global_event_type_id_counter { 1 };
-}
-
 
 // Type trait to extract member type from member pointer
 // For example, given &Class::member, it extracts the type of member
@@ -142,6 +134,8 @@ public:
         };
 
         desc.copy = [](void* dst, const void* src) {
+            spdlog::debug("Attribute Copy: {}", *static_cast<const Type*>(src));
+
             new (dst) Type(*static_cast<const Type*>(src));
         };
 
@@ -388,6 +382,11 @@ private:
     std::unordered_map<AttributeDescriptorHandle, AttributeDescriptor> attributeMap;
     std::unordered_map<NodeDescriptorHandle, NodeDescriptor> nodeMap;
     std::unordered_map<EventDescriptorHandle, EventDescriptor> eventMap;
+
+    static inline std::atomic<uint64_t> global_type_id_counter { 1 };
+    static inline std::atomic<uint64_t> global_attribute_type_id_counter { 1 };
+    static inline std::atomic<uint64_t> global_node_type_id_counter { 1 };
+    static inline std::atomic<uint64_t> global_event_type_id_counter { 1 };
 };
 
 } // namespace cf::core

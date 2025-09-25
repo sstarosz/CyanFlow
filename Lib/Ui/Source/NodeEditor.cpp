@@ -10,6 +10,8 @@
 #include <QToolBar>
 #include <QMouseEvent>
 #include <QScrollBar>
+#include <QSet>
+
 
 #include <algorithm>
 
@@ -88,15 +90,16 @@ NodeScene::NodeScene(QtApplicationContext& appContext, QObject* parent)
     setSceneRect(-sceneWidth, -sceneHeight, 2 * sceneWidth, 2 * sceneHeight);
 
     connect(this, &QGraphicsScene::selectionChanged, [this]() {
-        std::vector<std::shared_ptr<core::Node>> selectedNodes;
+        QSet<QPointer<QtNode>> selectedQtNodes;
 
         for (auto item : selectedItems()) {
             if (auto nodeItem = dynamic_cast<NodeItem*>(item)) {
-                selectedNodes.push_back(nodeItem->getNode());
+                selectedQtNodes.insert(nodeItem->getQtNode());
             }
         }
 
-        SelectionManager::getInstance().setSelection(selectedNodes);
+        //SelectionManager::getInstance().setSelection(selectedNodes);
+        m_appContext.selectionManager().setSelection(selectedQtNodes);
     });
 
     connect(&m_appContext, &QtApplicationContext::connectionAdded, this, &NodeScene::handleConnectionAdded);
