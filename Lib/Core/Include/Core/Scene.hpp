@@ -229,7 +229,7 @@ public:
                 auto fromAttr = attributes[conn.attributeSource];
                 auto toAttr = attributes[conn.attributeTarget];
                 if (fromAttr && toAttr) {           
-                    toAttr->copyDataFrom(fromAttr);
+                    toAttr->setValue(fromAttr);
                 }
             }
         }

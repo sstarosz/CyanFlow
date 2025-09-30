@@ -10,7 +10,6 @@ Attribute::Attribute()
 {
 }
 
-// TODO: Is the handle necessary here? Can we simplify this?
 Attribute::Attribute(AttributeDescriptor desc, AttributeHandle attributeHandle)
     : m_handle(attributeHandle)
     , m_descriptorHandle(desc.handle)
@@ -30,22 +29,26 @@ Attribute::~Attribute()
 
 void Attribute::copyDataFrom(const std::shared_ptr<Attribute>& other)
 {
-    if (!other || !other->data || !data)
+    if (!other || !other->data || !data) {
         throw std::runtime_error("Null data pointer in copyDataFrom");
-    if (getTypeHandle() != other->getTypeHandle())
+    }
+    if (getTypeHandle() != other->getTypeHandle()) {
         throw std::runtime_error("Type mismatch in copyDataFrom");
+    }
 
     // Use reflection to copy the data
     const auto& typeDesc = TypeRegistry::getTypeDescriptor(getTypeHandle());
     typeDesc.copy(data, other->data);
 
-    // TODO: Publish event
-    EventBus::publish(AttributeEvent {
-        AttributeEvent::AttributeMessage::eAttributeChanged, m_handle });
+    publishAttributeChanged(m_handle);
 }
 
 AttributeHandle Attribute::getHandle() const
 {
+    if (m_handle == kInvalidAttributeHandle) {
+        throw std::runtime_error("Invalid attribute handle in getHandle");
+    }
+
     return m_handle;
 }
 

@@ -12,7 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #----------------------------------Project option---------------------------------------#
 #---------------------------------------------------------------------------------------#
 option(Build_Docs           "Determine if build documentation" OFF)
-option(Build_Tests          "Determine if build unit tests" OFF)
+option(Build_Tests          "Determine if build unit tests" ON)
 option(Build_Examples       "Determine if build examples" OFF)
 option(Build_Benchmarks     "Determine if build benchmarks" OFF)
 
@@ -26,6 +26,7 @@ option(Enable_ASAN          "Build with AddressSanitizer" OFF) #TODO
 #---------------------------------------------------------------------------------------#
 include(CMake/Deploy.cmake)
 include(CMake/AddLibrary.cmake)
+include(CMake/AddTests.cmake)
 
 
 if(MSVC)
@@ -63,6 +64,10 @@ find_package(spirv_cross_core   CONFIG  REQUIRED)
 find_package(spirv_cross_glsl   CONFIG  REQUIRED)
 find_package(Eigen3             CONFIG  REQUIRED)
 find_package(spdlog             CONFIG  REQUIRED)
+
+if(Build_Tests)
+    find_package(GTest CONFIG REQUIRED)
+endif()
 
 #---------------------------------------------------------------------------------------#
 #----------------------------------Project Structure------------------------------------#

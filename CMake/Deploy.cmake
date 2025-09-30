@@ -17,7 +17,6 @@ function(Deploy_QT TARGET)
         --no-system-d3d-compiler
         --no-opengl-sw 
         $<TARGET_FILE:${PROJECT_NAME}>
-        DEPENDS ${PROJECT_NAME}
         COMMENT "Running windeployqt... on $<TARGET_FILE:${PROJECT_NAME}"
         VERBATIM
     )

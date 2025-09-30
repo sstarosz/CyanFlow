@@ -15,9 +15,6 @@ public:
 
 class UndoStack {
 public:
-    UndoStack() = default;
-    ~UndoStack() = default;
-    
     void push(std::unique_ptr<Command> command)
     {
         while (!m_redoStack.empty()) {

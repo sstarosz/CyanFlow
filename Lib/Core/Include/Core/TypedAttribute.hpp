@@ -19,7 +19,7 @@ public:
             throw std::runtime_error("Null attribute pointer in TypedAttribute ");
         }
 
-        if (ptrToAttribute->getTypeHandle() != TypeRegistry::getTypeHandle<DataType>()) {
+        if (ptrToAttribute->getAttributeDescriptor().typeHandle != TypeRegistry::getTypeHandle<DataType>()) {
             throw std::runtime_error("Data type mismatch in TypedAttribute ");
         }
     }

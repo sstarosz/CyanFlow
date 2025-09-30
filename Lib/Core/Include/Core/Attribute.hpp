@@ -19,7 +19,6 @@ public:
     Attribute();
     // TODO: Is the handle necessary here? Can we simplify this?
     Attribute(AttributeDescriptor desc, AttributeHandle attributeHandle);
-
     ~Attribute();
 
     template <typename Type>
@@ -37,22 +36,21 @@ public:
     template <typename Type>
     void setValue(const Type& value)
     {
-        spdlog::debug("Setting attribute {} to value: {}", getHandle(), value);
-        
         if (!data)
             throw std::runtime_error("Null data pointer in Attribute::setValue");
 
         if (getTypeHandle() != TypeRegistry::getTypeHandle<Type>())
             throw std::runtime_error("Type mismatch in Attribute::setValue");
 
-        *static_cast<Type*>(data) = value;
-        publishAttributeChanged(m_handle);
+        if constexpr (std::is_same_v<Type, const std::shared_ptr<Attribute>&>) {
+            copyDataFrom(value);
+        } else {
+            *static_cast<Type*>(data) = value;
+            publishAttributeChanged(m_handle);
+        }
     }
 
-    void copyDataFrom(const std::shared_ptr<Attribute>& other);
-
     AttributeHandle getHandle() const;
-    TypeHandle getTypeHandle() const;
     AttributeDescriptor getAttributeDescriptor() const;
 
 private:
@@ -61,6 +59,9 @@ private:
     void* data { nullptr };
 
     void publishAttributeChanged(AttributeHandle handle);
+    TypeHandle getTypeHandle() const;
+
+    void copyDataFrom(const std::shared_ptr<Attribute>& other);
 };
 
 } // namespace cf::core

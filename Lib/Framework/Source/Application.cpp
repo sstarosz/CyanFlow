@@ -1,5 +1,6 @@
 #include "Application.hpp"
 
+#include "Core/DataTypes.hpp"
 #include "Core/Nodes/AddNode.hpp"
 #include "Core/Events/AttributeEvent.hpp"
 #include "Core/Events/ConnectionAddedEvent.hpp"
@@ -15,7 +16,17 @@ Application::Application(int argc, char* argv[])
 
 void registerTypes()
 {
-    core::TypeRegistry::registerType<float>("float");
+    core::TypeRegistry::registerType<core::Bool>("bool");
+
+    core::TypeRegistry::registerType<core::Int32>("int32");
+    core::TypeRegistry::registerType<core::UInt32>("uint32");
+    core::TypeRegistry::registerType<core::Int64>("int64");
+    core::TypeRegistry::registerType<core::UInt64>("uint64");
+
+    core::TypeRegistry::registerType<core::Float>("float");
+    core::TypeRegistry::registerType<core::Double>("double");
+
+    core::TypeRegistry::registerType<core::String>("string");
 }
 
 void registerNodeTypes()
