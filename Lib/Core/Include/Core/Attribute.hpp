@@ -6,6 +6,9 @@
 
 namespace cf::core {
 
+template <typename Type>
+concept IsAttribute = std::same_as<std::remove_cvref_t<Type>, std::shared_ptr<Attribute>> || std::same_as<std::remove_cvref_t<Type>, Attribute>;
+
 using AttributeHandle = uint64_t;
 static constexpr AttributeHandle kInvalidAttributeHandle = 0;
 
@@ -36,17 +39,10 @@ public:
     template <typename Type>
     void setValue(const Type& value)
     {
-        if (!data)
-            throw std::runtime_error("Null data pointer in Attribute::setValue");
-
-        if (getTypeHandle() != TypeRegistry::getTypeHandle<Type>())
-            throw std::runtime_error("Type mismatch in Attribute::setValue");
-
-        if constexpr (std::is_same_v<Type, const std::shared_ptr<Attribute>&>) {
+        if constexpr (IsAttribute<Type>) {
             copyDataFrom(value);
         } else {
-            *static_cast<Type*>(data) = value;
-            publishAttributeChanged(m_handle);
+            copyDataFromPrimitive(value);
         }
     }
 
@@ -62,6 +58,21 @@ private:
     TypeHandle getTypeHandle() const;
 
     void copyDataFrom(const std::shared_ptr<Attribute>& other);
+    void copyDataFrom(const Attribute& other);
+
+    template <typename Type>
+    void copyDataFromPrimitive(const Type& value)
+    {
+        if (!data) {
+            throw std::runtime_error("Null data pointer in copyDataFromPrimitive");
+        }
+        if (getTypeHandle() != TypeRegistry::getTypeHandle<Type>()) {
+            throw std::runtime_error("Type mismatch in copyDataFromPrimitive");
+        }
+
+        *static_cast<Type*>(data) = value;
+        publishAttributeChanged(m_handle);
+    }
 };
 
 } // namespace cf::core

@@ -26,7 +26,7 @@ namespace {
     QWidget* createWidgetForAttribute(const cf::ui::QtAttribute& attribute) {
         
 
-        auto typeHandle = attribute.getAttribute()->getTypeHandle();
+        auto typeHandle = attribute.getAttribute()->getAttributeDescriptor().typeHandle;
         if(typeHandle == cf::core::TypeRegistry::getTypeHandle<float>())
         {
             if(attribute.isInput())

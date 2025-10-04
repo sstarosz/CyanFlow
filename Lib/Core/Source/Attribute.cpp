@@ -43,6 +43,22 @@ void Attribute::copyDataFrom(const std::shared_ptr<Attribute>& other)
     publishAttributeChanged(m_handle);
 }
 
+void Attribute::copyDataFrom(const Attribute& other)
+{
+    if (!other.data || !data) {
+        throw std::runtime_error("Null data pointer in copyDataFrom");
+    }
+    if (getTypeHandle() != other.getTypeHandle()) {
+        throw std::runtime_error("Type mismatch in copyDataFrom");
+    }
+
+    // Use reflection to copy the data
+    const auto& typeDesc = TypeRegistry::getTypeDescriptor(getTypeHandle());
+    typeDesc.copy(data, other.data);
+
+    publishAttributeChanged(m_handle);
+}
+
 AttributeHandle Attribute::getHandle() const
 {
     if (m_handle == kInvalidAttributeHandle) {

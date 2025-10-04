@@ -7,6 +7,7 @@ AddLibrary(
         Source/Document.cpp
         Source/Command.cpp
         Source/Attribute.cpp
+        Source/UndoStack.cpp
 
         Source/Nodes/AddNode.cpp
     PUBLIC_HEADERS
@@ -16,6 +17,8 @@ AddLibrary(
         Include/Core/Node.hpp
         Include/Core/Document.hpp
         Include/Core/Command.hpp
+        Include/Core/Attribute.hpp
+        Include/Core/UndoStack.hpp
 
         #Nodes
         Include/Core/Nodes/AddNode.hpp

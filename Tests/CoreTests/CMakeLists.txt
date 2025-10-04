@@ -4,6 +4,7 @@ AddTests(
     DESCRIPTION "Unit tests for the Core module"
     SOURCES
         AttributeTests.cpp
+        UndoStackTests.cpp
     TEST_LIBS
         cf::Core
     PUBLIC_LIBS

@@ -60,7 +60,7 @@ QVariant QtAttribute::getValue() const
     // This is a simplified example. You might want to handle more types.
 
 
-    auto typeHandle = m_attribute->getTypeHandle();
+    auto typeHandle = m_attribute->getAttributeDescriptor().typeHandle;
     if (typeHandle == core::TypeRegistry::getTypeHandle<int>()) 
     {
         spdlog::debug("QtAttribute::getValue() - Attribute '{}' is of type int with value {}",

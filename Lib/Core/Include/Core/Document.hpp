@@ -1,8 +1,8 @@
-#ifndef CF_CORE_DOCUMENT
-#define CF_CORE_DOCUMENT
+#ifndef CF_CORE_DOCUMENT_HPP
+#define CF_CORE_DOCUMENT_HPP
 
 #include "Core/Scene.hpp"
-#include "Core/Command.hpp"
+#include "Core/UndoStack.hpp"
 
 namespace cf::core {
 class Document {
@@ -22,4 +22,4 @@ private:
 
 } // namespace cf::core
 
-#endif // CF_CORE_DOCUMENT
+#endif // CF_CORE_DOCUMENT_HPP
