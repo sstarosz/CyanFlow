@@ -1,19 +1,19 @@
-#ifndef CF_CORE_SCENE
-#define CF_CORE_SCENE
+#ifndef CF_CORE_SCENE_HPP
+#define CF_CORE_SCENE_HPP
 
 #include "Core/Attribute.hpp"
-#include "Core/Node.hpp"
 #include "Core/EventBus.hpp"
-#include "Core/TypeRegistry.hpp"
-#include "Core/InputAttribute.hpp"
-#include "Core/OutputAttribute.hpp"
 #include "Core/Events/AttributeEvent.hpp"
+#include "Core/InputAttribute.hpp"
+#include "Core/Node.hpp"
+#include "Core/OutputAttribute.hpp"
+#include "Core/TypeRegistry.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
-#include <algorithm>
 
-#include<spdlog/spdlog.h>
+#include <spdlog/spdlog.h>
 
 namespace cf::core {
 
@@ -23,8 +23,6 @@ struct Connection {
     NodeHandle nodeTarget;
     AttributeHandle attributeTarget;
 };
-
-
 
 class Scene {
 public:
@@ -46,7 +44,6 @@ public:
         }
     }
 
-
     template <NodeConcept NodeType>
     std::shared_ptr<NodeType> addNode(std::unique_ptr<NodeType> node)
     {
@@ -62,7 +59,7 @@ public:
                 attrDesc.setter(static_cast<void*>(m_nodes[handle].get()), attribute);
             }
 
-            spdlog::info("Created attribute '{}' with handle {} for node '{}'", 
+            spdlog::info("Created attribute '{}' with handle {} for node '{}'",
                 attrDesc.name, attribute->getHandle(), m_nodes[handle]->getName());
 
             nodeAttributes[attribute->getHandle()] = handle;
@@ -71,9 +68,9 @@ public:
         return std::static_pointer_cast<NodeType>(m_nodes[handle]);
     }
 
-    template<typename Type>
+    template <typename Type>
     void connect(std::shared_ptr<Node> formNode, OutputAttribute<Type>& fromAttr,
-                 std::shared_ptr<Node> toNode, InputAttribute<Type>& toAttr)
+        std::shared_ptr<Node> toNode, InputAttribute<Type>& toAttr)
     {
 
         AttributeHandle fromHandleAttr = getAttributeHandle(fromAttr);
@@ -107,7 +104,6 @@ public:
         });
     }
 
-
     const std::unordered_map<NodeHandle, std::shared_ptr<Node>>& getNodes() const { return m_nodes; }
     const std::unordered_map<AttributeHandle, std::shared_ptr<Attribute>>& getAttributes() const { return attributes; }
     const std::vector<Connection>& getConnections() const { return connections; }
@@ -125,10 +121,10 @@ public:
     {
         std::vector<std::shared_ptr<Attribute>> result;
         NodeHandle nodeHandle = getNodeHandle(node);
-        for(const auto& [attrHandle, handleNode] : nodeAttributes) {
-            if(handleNode == nodeHandle) {
+        for (const auto& [attrHandle, handleNode] : nodeAttributes) {
+            if (handleNode == nodeHandle) {
                 auto attrIt = attributes.find(attrHandle);
-                if(attrIt != attributes.end()) {
+                if (attrIt != attributes.end()) {
                     result.push_back(attrIt->second);
                 }
             }
@@ -228,13 +224,12 @@ public:
             if (conn.nodeTarget == targetHandle) {
                 auto fromAttr = attributes[conn.attributeSource];
                 auto toAttr = attributes[conn.attributeTarget];
-                if (fromAttr && toAttr) {           
+                if (fromAttr && toAttr) {
                     toAttr->setValue(fromAttr);
                 }
             }
         }
     }
-
 
 private:
     NodeHandle generateNodeHandle() { return m_nextNodeHandle++; }
@@ -255,10 +250,8 @@ private:
     bool m_isEvaluating { false };
     uint64_t m_m_evaluationCount { 0 };
 
-
     NodeHandle m_nextNodeHandle { 1 };
     AttributeHandle nextAttributeHandle { 1 };
-
 
     std::unordered_map<NodeHandle, std::shared_ptr<Node>> m_nodes;
     std::unordered_map<AttributeHandle, std::shared_ptr<Attribute>> attributes;
@@ -266,9 +259,8 @@ private:
     std::vector<Connection> connections;
 
     std::vector<EventBus::SubscriptionId> m_subscriptions;
-
 };
 
 } // namespace cf::core
 
-#endif // CF_CORE_SCENE
+#endif // CF_CORE_SCENE_HPP

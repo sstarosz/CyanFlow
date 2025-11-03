@@ -1,5 +1,5 @@
-#ifndef CF_CORE_ATTRIBUTE
-#define CF_CORE_ATTRIBUTE
+#ifndef CF_CORE_ATTRIBUTE_HPP
+#define CF_CORE_ATTRIBUTE_HPP
 
 #include "Core/TypeDescriptors.hpp"
 #include "Core/TypeRegistry.hpp"
@@ -77,4 +77,4 @@ private:
 
 } // namespace cf::core
 
-#endif // CF_CORE_ATTRIBUTE
+#endif // CF_CORE_ATTRIBUTE_HPP

@@ -1,23 +1,23 @@
 #ifndef CF_UI_NODEEDITOR_HPP
 #define CF_UI_NODEEDITOR_HPP
 
-#include "Core/Scene.hpp"
 #include "Core/Document.hpp"
 #include "Core/Events/ConnectionAddedEvent.hpp"
+#include "Core/Scene.hpp"
 #include "Ui/QtApplicationContext.hpp"
 
-#include "Ui/Models/QtNode.hpp"
 #include "Ui/Models/QtAttribute.hpp"
+#include "Ui/Models/QtNode.hpp"
 
 #include <QAbstractGraphicsShapeItem>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
-#include <QGraphicsView>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
 
 #include <QMenuBar>
-#include <QWidget>
 #include <QPointer>
+#include <QWidget>
 
 namespace cf::ui {
 
@@ -25,14 +25,17 @@ class NodeEditorModel : public QObject {
     Q_OBJECT
 public:
     NodeEditorModel(std::shared_ptr<core::Scene> scene, QObject* parent = nullptr)
-        : QObject(parent), m_scene(scene) {}
+        : QObject(parent)
+        , m_scene(scene)
+    {
+    }
 
     std::shared_ptr<core::Scene> getScene() const { return m_scene; }
     void setScene(std::shared_ptr<core::Scene> scene) { m_scene = scene; }
+
 private:
     std::shared_ptr<core::Scene> m_scene;
 };
-
 
 // #373B3E
 constexpr QColor NodeColor = QColor(55, 59, 62);
@@ -45,23 +48,22 @@ class NodeItem;
 class NodeAttribute;
 class ConnectionItem;
 
-class NodePlug : public QAbstractGraphicsShapeItem
-{
-    private:
+class NodePlug : public QAbstractGraphicsShapeItem {
+private:
     static constexpr QColor nodeConnectionColor = QColor(85, 209, 208);
     static constexpr QColor nodeConnectionHover = QColor(175, 233, 233);
 
     static constexpr float plugWidth = 25.0f;
     static constexpr float plugHeight = 25.0f;
 
-    public:
+public:
     NodePlug(QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
 
     void paint(QPainter* painter,
-                const QStyleOptionGraphicsItem* option,
-                QWidget* widget) override;
+        const QStyleOptionGraphicsItem* option,
+        QWidget* widget) override;
 
     void setConnected(bool state);
     bool isConnected() const;
@@ -77,9 +79,9 @@ class NodePlug : public QAbstractGraphicsShapeItem
     QPointF getPlugCenterPosition() const;
 
     void addConnection(ConnectionItem* connection);
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
-    private:
+private:
     bool m_isHovered = false;
     bool m_isConnected = false;
     bool m_isConnecting = false;
@@ -93,9 +95,8 @@ class NodePlug : public QAbstractGraphicsShapeItem
  *
  * MARK: NodeAttribute
  */
-class NodeAttribute : public QAbstractGraphicsShapeItem
-{
-    private:
+class NodeAttribute : public QAbstractGraphicsShapeItem {
+private:
     // Size
     // Main node size
     static constexpr int32_t nodeWidth = 320;
@@ -114,15 +115,15 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     static constexpr QColor nodeConnectionColor = QColor(85, 209, 208);
     ;
 
-    public:
+public:
     NodeAttribute(QtAttribute* qtAttribute,
-                  QGraphicsItem* parent = nullptr);
+        QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
 
     void paint(QPainter* painter,
-                [[maybe_unused]] const QStyleOptionGraphicsItem* option,
-                [[maybe_unused]] QWidget* widget) override;
+        [[maybe_unused]] const QStyleOptionGraphicsItem* option,
+        [[maybe_unused]] QWidget* widget) override;
 
     /*--------------------------------*/
     /*---------Getter/Setters---------*/
@@ -134,7 +135,7 @@ class NodeAttribute : public QAbstractGraphicsShapeItem
     std::shared_ptr<core::Attribute> getAttribute() const;
     core::AttributeDescriptor getAttributeDescriptor() const;
 
-    private:
+private:
     QtAttribute* m_qtAttribute; // Handler to QtAttribute
 
     NodePlug* m_pInputPlug;
@@ -155,8 +156,8 @@ public:
     virtual QRectF boundingRect() const override;
 
     virtual void paint(QPainter* painter,
-                       const QStyleOptionGraphicsItem* option,
-                       QWidget* widget) override;
+        const QStyleOptionGraphicsItem* option,
+        QWidget* widget) override;
 
     std::shared_ptr<core::Node> getNode() const;
     QtNode* getQtNode() const { return m_qtNode; }
@@ -169,6 +170,7 @@ private:
 class ConnectionItem : public QGraphicsPathItem {
 
     static constexpr QColor connectionColor = QColor(135, 229, 207);
+
 public:
     ConnectionItem(QGraphicsItem* parent = nullptr);
     ConnectionItem(NodePlug* startPlug, NodePlug* endPlug, QGraphicsItem* parent = nullptr);
@@ -193,7 +195,6 @@ private:
 class NodeScene : public QGraphicsScene {
     Q_OBJECT
 
-
     constexpr static int32_t sceneWidth = 10000;
     constexpr static int32_t sceneHeight = 10000;
 
@@ -210,7 +211,6 @@ public:
 
 public slots:
     void handleConnectionAdded(const core::ConnectionAddedEvent& event);
-
 
 protected:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -240,7 +240,6 @@ class NodeGraphView : public QGraphicsView {
 public:
     explicit NodeGraphView(QtApplicationContext& appContext, QWidget* parent = nullptr);
 
-
     void resetView();
 
 protected:
@@ -255,13 +254,12 @@ protected:
 
 private:
     QtApplicationContext& m_appContext;
-    
-    //Ui
+
+    // Ui
     NodeScene* m_nodeScene;
 
     bool m_isPanning = false;
     QPoint m_panStartPoint;
-
 };
 
 class NodeEditor : public QWidget {

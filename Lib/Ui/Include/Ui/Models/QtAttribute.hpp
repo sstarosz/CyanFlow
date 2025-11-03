@@ -7,7 +7,6 @@
 #include <QObject>
 #include <QVariant>
 
-
 namespace cf::ui {
 
 class QtAttribute : public QObject {
@@ -29,7 +28,7 @@ public:
 
     core::AttributeDescriptor getAttributeDescriptor() const;
     QVariant getValue() const;
-    
+
 signals:
     void valueChanged();
 

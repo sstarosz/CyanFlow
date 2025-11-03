@@ -1,5 +1,5 @@
-#ifndef CF_CORE_OUTPUTATTRIBUTE
-#define CF_CORE_OUTPUTATTRIBUTE
+#ifndef CF_CORE_OUTPUTATTRIBUTE_HPP
+#define CF_CORE_OUTPUTATTRIBUTE_HPP
 
 #include "Core/TypedAttribute.hpp"
 
@@ -23,4 +23,4 @@ public:
 
 } // namespace cf::core
 
-#endif // CF_CORE_OUTPUTATTRIBUTE
+#endif // CF_CORE_OUTPUTATTRIBUTE_HPP

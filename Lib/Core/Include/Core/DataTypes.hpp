@@ -5,7 +5,7 @@
 #include <string>
 
 namespace cf::core {
-    
+
 using Bool = bool;
 
 using Int32 = std::int32_t;
@@ -17,7 +17,6 @@ using Float = float;
 using Double = double;
 
 using String = std::string;
-
 
 } // namespace cf::core
 

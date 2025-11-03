@@ -1,5 +1,5 @@
-#ifndef CF_CORE_TYPEDATTRIBUTE
-#define CF_CORE_TYPEDATTRIBUTE
+#ifndef CF_CORE_TYPEDATTRIBUTE_HPP
+#define CF_CORE_TYPEDATTRIBUTE_HPP
 
 #include "Core/Attribute.hpp"
 #include <cassert>
@@ -7,12 +7,12 @@
 namespace cf::core {
 
 template <typename DataType>
-struct TypedAttribute  {
+struct TypedAttribute {
 public:
     using ValueType = DataType;
 
-    TypedAttribute () = default;
-    TypedAttribute (std::shared_ptr<Attribute> attribute)
+    TypedAttribute() = default;
+    TypedAttribute(std::shared_ptr<Attribute> attribute)
         : ptrToAttribute(std::move(attribute))
     {
         if (!ptrToAttribute) {
@@ -26,7 +26,7 @@ public:
 
     operator DataType() const { return this->getValue(); }
 
-    TypedAttribute & operator=(std::shared_ptr<Attribute> attribute)
+    TypedAttribute& operator=(std::shared_ptr<Attribute> attribute)
     {
         setAttributePtr(attribute);
         return *this;
@@ -54,9 +54,6 @@ private:
     std::shared_ptr<Attribute> ptrToAttribute;
 };
 
-
-
-
 } // namespace cf::core
 
-#endif // CF_CORE_TYPEDATTRIBUTE
+#endif // CF_CORE_TYPEDATTRIBUTE_HPP

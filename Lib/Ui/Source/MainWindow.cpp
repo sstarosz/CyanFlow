@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 
 namespace cf::ui {
-    
+
 MainWindow::MainWindow(QtApplicationContext& appContext,
     QWidget* parent,
     Qt::WindowFlags flags)

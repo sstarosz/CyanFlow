@@ -4,15 +4,13 @@
 #include "Core/Scene.hpp"
 #include "Ui/QtApplicationContext.hpp"
 
-#include <QWidget>
-#include <QVBoxLayout>
 #include <QTabWidget>
+#include <QVBoxLayout>
+#include <QWidget>
 
-namespace cf::ui
-{
+namespace cf::ui {
 
-class AttributeEditor : public QWidget
-{
+class AttributeEditor : public QWidget {
     Q_OBJECT
 public:
     AttributeEditor(QtApplicationContext& appContext, QWidget* parent = nullptr);
@@ -24,20 +22,16 @@ public slots:
 private:
     void clearAttributes();
     void displayNodeAttributes(const QPointer<QtNode>& node);
-    
+
     QtApplicationContext& m_appContext;
 
     QVBoxLayout* m_rootLayout = nullptr;
     QWidget* m_attributeEditorPanel = nullptr;
     QTabWidget* m_tabWidget = nullptr;
-    
 };
 
-//AttributeEditorWidget
+// AttributeEditorWidget
 
-
-
-
-}// namespace cf::ui
+} // namespace cf::ui
 
 #endif // CF_UI_ATTRIBUTEEDITOR_HPP

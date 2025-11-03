@@ -8,24 +8,26 @@ using namespace cf::core;
 
 class AttributeTest : public ::testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         registerTestTypes();
 
         intHandle = TypeRegistry::getTypeHandle<Int32>();
         stringHandle = TypeRegistry::getTypeHandle<String>();
 
-        //Register int attribute descriptor
+        // Register int attribute descriptor
         intDescriptor.name = "Int32 Attribute";
         intDescriptor.typeHandle = intHandle;
         TypeRegistry::registerAttributeDescriptor(intDescriptor);
 
-        //Register string attribute descriptor
+        // Register string attribute descriptor
         stringDescriptor.name = "String Attribute";
         stringDescriptor.typeHandle = stringHandle;
         TypeRegistry::registerAttributeDescriptor(stringDescriptor);
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
     }
 
     AttributeHandle kTestableHandle = 2;
@@ -34,7 +36,7 @@ protected:
     AttributeDescriptor intDescriptor;
     AttributeDescriptor stringDescriptor;
 
-// Register types for testing
+    // Register types for testing
     void registerTestTypes()
     {
         TypeRegistry::registerType<Bool>("Bool");
@@ -94,68 +96,72 @@ TEST_F(AttributeTest, TypeMismatch)
     EXPECT_THROW(attr.setValue(3.14f), std::runtime_error);
 }
 
-
 /*--------------------------------------------------------------*/
 /*---------------------Assignment-to-Attribute------------------*/
 /*--------------------------------------------------------------*/
 
-
 // Basic value category tests
-TEST_F(AttributeTest, LvalueReference) {
+TEST_F(AttributeTest, LvalueReference)
+{
     Attribute attr(intDescriptor, kTestableHandle);
     Int32 value = 39;
-    
+
     EXPECT_NO_THROW(attr.setValue(value));
     EXPECT_EQ(attr.getValue<Int32>(), 39);
 }
 
-TEST_F(AttributeTest, ConstLvalueReference) {
+TEST_F(AttributeTest, ConstLvalueReference)
+{
     Attribute attr(intDescriptor, kTestableHandle);
     const Int32 value = 39;
-    
+
     EXPECT_NO_THROW(attr.setValue(value));
     EXPECT_EQ(attr.getValue<Int32>(), 39);
 }
 
-TEST_F(AttributeTest, RvalueReference) {
+TEST_F(AttributeTest, RvalueReference)
+{
     Attribute attr(intDescriptor, kTestableHandle);
-    
+
     EXPECT_NO_THROW(attr.setValue(200));
     EXPECT_EQ(attr.getValue<Int32>(), 200);
 }
 
-TEST_F(AttributeTest, TemporaryObjects) {
+TEST_F(AttributeTest, TemporaryObjects)
+{
     Attribute attr(stringDescriptor, kTestableHandle);
-    
+
     EXPECT_NO_THROW(attr.setValue(String("test")));
     EXPECT_EQ(attr.getValue<String>(), "test");
 }
 
 // Attribute type copying tests
-TEST_F(AttributeTest, AttributeSharedPtr) {
+TEST_F(AttributeTest, AttributeSharedPtr)
+{
     auto sourceAttr = std::make_shared<Attribute>(intDescriptor, kTestableHandle);
     sourceAttr->setValue(39);
     Attribute targetAttr(intDescriptor, kTestableHandle + 1);
-    
 
     EXPECT_NO_THROW(targetAttr.setValue(sourceAttr));
     EXPECT_EQ(targetAttr.getValue<Int32>(), 39);
 }
 
-TEST_F(AttributeTest, AttributeReference) {
+TEST_F(AttributeTest, AttributeReference)
+{
     auto sourceAttr = std::make_shared<Attribute>(intDescriptor, kTestableHandle);
     sourceAttr->setValue(39);
     Attribute targetAttr(intDescriptor, kTestableHandle + 1);
-    
+
     EXPECT_NO_THROW(targetAttr.setValue(*sourceAttr));
     EXPECT_EQ(targetAttr.getValue<Int32>(), 39);
 }
 
-TEST_F(AttributeTest, AttributeConstReference) {
+TEST_F(AttributeTest, AttributeConstReference)
+{
     auto sourceAttr = std::make_shared<Attribute>(intDescriptor, kTestableHandle);
     sourceAttr->setValue(39);
     Attribute targetAttr(intDescriptor, kTestableHandle + 1);
-    
+
     EXPECT_NO_THROW(targetAttr.setValue(static_cast<const Attribute&>(*sourceAttr)));
     EXPECT_EQ(targetAttr.getValue<Int32>(), 39);
 }
@@ -163,5 +169,3 @@ TEST_F(AttributeTest, AttributeConstReference) {
 /*--------------------------------------------------------------*/
 /*---------------------End Assignment-to-Attribute--------------*/
 /*--------------------------------------------------------------*/
-
-

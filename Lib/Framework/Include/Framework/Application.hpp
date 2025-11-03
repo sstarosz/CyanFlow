@@ -1,15 +1,14 @@
-#ifndef CF_FRAMEWORK_APPLICATION
-#define CF_FRAMEWORK_APPLICATION
+#ifndef CF_FRAMEWORK_APPLICATION_HPP
+#define CF_FRAMEWORK_APPLICATION_HPP
 
-#include "Core/Scene.hpp"
 #include "Core/Document.hpp"
+#include "Core/Scene.hpp"
 #include "Framework/ApplicationContext.hpp"
 #include "Ui/GuiManager.hpp"
 
 #include <QApplication>
 
 namespace cf::framework {
-
 
 class Application {
 public:
@@ -26,4 +25,4 @@ private:
 
 } // namespace cf::framework
 
-#endif // CF_FRAMEWORK_APPLICATION
+#endif // CF_FRAMEWORK_APPLICATION_HPP

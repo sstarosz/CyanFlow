@@ -1,39 +1,36 @@
-#ifndef CF_CORE_TYPEDESCRIPTORS
-#define CF_CORE_TYPEDESCRIPTORS
+#ifndef CF_CORE_TYPEDESCRIPTORS_HPP
+#define CF_CORE_TYPEDESCRIPTORS_HPP
 
-#include <string_view>
-#include <functional>
-#include <vector>
-#include <string>
-#include <memory>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace cf::core {
 
 class Attribute;
 
-//Type
+// Type
 using TypeHandle = std::uint64_t;
 constexpr TypeHandle kInvalidTypeHandle = 0;
 
-//Attribute
+// Attribute
 using AttributeDescriptorHandle = std::uint64_t;
 static constexpr AttributeDescriptorHandle kInvalidAttributeDescriptorHandle = 0;
 
-//Node
+// Node
 using NodeDescriptorHandle = std::uint64_t;
 static constexpr NodeDescriptorHandle kInvalidNodeDescriptorHandle = 0;
 
-//Event
+// Event
 using EventDescriptorHandle = std::uint64_t;
 static constexpr EventDescriptorHandle kInvalidEventDescriptorHandle = 0;
 
-
-struct TypeDescriptor
-{
+struct TypeDescriptor {
     std::string_view name;
     size_t size;
-
 
     std::function<void*(void)> create;
     std::function<void(void*, const void*)> copy;
@@ -42,13 +39,11 @@ struct TypeDescriptor
     std::function<std::string(const void*)> toString;
 };
 
-
 enum class AttributeRole {
-    eInput,    // Readable only
-    eOutput,   // Writable only
-    eInOut     // Readable and writable (pass-through)
+    eInput, // Readable only
+    eOutput, // Writable only
+    eInOut // Readable and writable (pass-through)
 };
-
 
 using AttributeSetterFunc = std::function<void(void*, std::shared_ptr<Attribute>)>;
 
@@ -60,7 +55,6 @@ struct AttributeDescriptor {
 
     AttributeSetterFunc setter { nullptr };
 };
-
 
 struct NodeDescriptor {
     NodeDescriptorHandle handle;
@@ -74,7 +68,6 @@ struct EventDescriptor {
     std::string category;
 };
 
-
 } // namespace cf::core
 
-#endif // CF_CORE_TYPEDESCRIPTORS
+#endif // CF_CORE_TYPEDESCRIPTORS_HPP

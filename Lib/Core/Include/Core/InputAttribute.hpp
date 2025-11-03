@@ -1,5 +1,5 @@
-#ifndef CF_CORE_INPUTATTRIBUTE
-#define CF_CORE_INPUTATTRIBUTE
+#ifndef CF_CORE_INPUTATTRIBUTE_HPP
+#define CF_CORE_INPUTATTRIBUTE_HPP
 
 #include "Core/TypedAttribute.hpp"
 
@@ -14,7 +14,6 @@ namespace cf::core {
  */
 template <typename DataType>
 struct InputAttribute : public TypedAttribute<DataType> {
-
 
     InputAttribute() = default;
     InputAttribute(std::shared_ptr<Attribute> attribute)
@@ -49,4 +48,4 @@ struct InputAttribute : public TypedAttribute<DataType> {
 
 } // namespace cf::core
 
-#endif // CF_CORE_INPUTATTRIBUTE
+#endif // CF_CORE_INPUTATTRIBUTE_HPP

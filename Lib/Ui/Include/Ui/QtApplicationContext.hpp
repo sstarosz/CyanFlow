@@ -46,9 +46,8 @@ public:
         m_appContext.undoStack().undo();
     }
 
-
     SelectionManager& selectionManager() { return m_selectionManager; }
-    
+
 signals:
     void connectionAdded(const core::ConnectionAddedEvent& event);
 

@@ -1,39 +1,37 @@
-#ifndef CF_CORE_TYPEREGISTRY
-#define CF_CORE_TYPEREGISTRY
+#ifndef CF_CORE_TYPEREGISTRY_HPP
+#define CF_CORE_TYPEREGISTRY_HPP
 
 #include "Core/TypeDescriptors.hpp"
 
+#include "spdlog/spdlog.h"
 #include <cstdint>
 #include <stdexcept>
 #include <unordered_map>
-#include "spdlog/spdlog.h"
 
 namespace cf::core {
 
 // Type trait to extract member type from member pointer
 // For example, given &Class::member, it extracts the type of member
-template<typename T>
+template <typename T>
 struct member_type_from_member_pointer;
 
-template<typename Class, typename Member>
+template <typename Class, typename Member>
 struct member_type_from_member_pointer<Member Class::*> {
     using type = Member;
 };
 
-template<typename T>
+template <typename T>
 using member_type_from_member_pointer_t = typename member_type_from_member_pointer<T>::type;
 
 // Type trait to extract the value type from an attribute type
 // For example, InputAttribute<int> -> int
-template<typename T>
+template <typename T>
 struct attribute_value_type {
     using type = T::ValueType;
 };
 
-template<typename T>
+template <typename T>
 using attribute_value_type_t = typename attribute_value_type<T>::type;
-
-
 
 class TypeRegistry {
 public:
@@ -56,7 +54,7 @@ public:
         return TypeHandle(id);
     }
 
-    template<typename NodeType>
+    template <typename NodeType>
     static NodeDescriptorHandle getNodeDescriptorHandle()
     {
         return getInstance().getNodeDescriptorHandleImpl<NodeType>();
@@ -68,7 +66,6 @@ public:
         static const uint64_t id = global_node_type_id_counter++;
         return NodeDescriptorHandle(id);
     }
-
 
     template <typename Type>
     static TypeDescriptor getTypeDescriptor()
@@ -121,7 +118,6 @@ public:
         return handle;
     }
 
-    
     template <typename Type>
     TypeDescriptor makeTypeDescriptor()
     {
@@ -153,15 +149,13 @@ public:
                 return std::to_string(value);
             } else if constexpr (std::is_same_v<Type, std::string>) {
                 return value;
-            } 
-            else {
+            } else {
                 return "unsupported";
             }
         };
 
         return desc;
     }
-
 
     /*-------------------------*/
     /*--- Node Registration ---*/
@@ -184,7 +178,7 @@ public:
         throw std::runtime_error("Node type not registered: " + std::string(typeid(Type).name()));
     }
 
-    //TODO: Make TypeHandle a strong typedef to avoid confusion
+    // TODO: Make TypeHandle a strong typedef to avoid confusion
     static NodeDescriptor getNodeDescriptor(NodeDescriptorHandle handle)
     {
         return getInstance().getNodeDescriptorImpl(handle);
@@ -212,7 +206,7 @@ public:
         NodeDescriptorHandle handle = getNodeDescriptorHandle<Type>();
 
         NodeDescriptor desc = Type::initialize();
-        desc.handle = handle; 
+        desc.handle = handle;
 
         // Register all attributes from this node type
         for (auto& attrDesc : desc.attributes) {
@@ -261,40 +255,36 @@ public:
         return handle;
     }
 
-
     // Specialization for nested struct members
-    template<typename NodeClassType, typename MemberPtrType,  AttributeRole role>
+    template <typename NodeClassType, typename MemberPtrType, AttributeRole role>
     static AttributeDescriptor make_attribute_descriptor_impl(MemberPtrType member, std::string_view name)
     {
         // Extract the value type from the member type
-        using AttributeType = member_type_from_member_pointer_t<MemberPtrType>; 
+        using AttributeType = member_type_from_member_pointer_t<MemberPtrType>;
         using ValueType = attribute_value_type_t<AttributeType>;
-        
+
         AttributeDescriptor desc;
         desc.typeHandle = TypeRegistry::getTypeHandle<ValueType>();
         desc.name = name;
         desc.role = role;
-        
+
         if constexpr (role == AttributeRole::eInput) {
             desc.setter = [member](void* nodePtr, std::shared_ptr<Attribute> attribute) {
                 auto* node = static_cast<NodeClassType*>(nodePtr);
                 (node->inputs).*member = attribute;
             };
-        } 
-        else if constexpr (role == AttributeRole::eOutput) {
+        } else if constexpr (role == AttributeRole::eOutput) {
             desc.setter = [member](void* nodePtr, std::shared_ptr<Attribute> attribute) {
                 auto* node = static_cast<NodeClassType*>(nodePtr);
                 (node->outputs).*member = attribute;
             };
-        } 
-        else {
+        } else {
             throw std::runtime_error("Unsupported attribute role");
         }
         return desc;
     }
 
-
-    template<typename NodeType, typename MemberPtrType, AttributeRole role>
+    template <typename NodeType, typename MemberPtrType, AttributeRole role>
     static AttributeDescriptor addAttributeDescriptor(MemberPtrType member, std::string_view name)
     {
         return make_attribute_descriptor_impl<NodeType, MemberPtrType, role>(member, name);
@@ -304,12 +294,14 @@ public:
     /*--- Event Registration ---*/
     /*--------------------------*/
     template <typename EventType>
-    static EventDescriptorHandle getEventDescriptorHandle() {
+    static EventDescriptorHandle getEventDescriptorHandle()
+    {
         return getInstance().getEventDescriptorHandleImpl<EventType>();
     }
 
     template <typename EventType>
-    EventDescriptorHandle getEventDescriptorHandleImpl() const {
+    EventDescriptorHandle getEventDescriptorHandleImpl() const
+    {
         static const uint64_t id = global_event_type_id_counter++;
         return EventDescriptorHandle(id);
     }
@@ -332,11 +324,13 @@ public:
         throw std::runtime_error("Event type not registered: " + std::string(typeid(Type).name()));
     }
 
-    static EventDescriptor getEventDescriptor(EventDescriptorHandle handle) {
+    static EventDescriptor getEventDescriptor(EventDescriptorHandle handle)
+    {
         return getInstance().getEventDescriptorImpl(handle);
     }
 
-    EventDescriptor getEventDescriptorImpl(EventDescriptorHandle handle) const {
+    EventDescriptor getEventDescriptorImpl(EventDescriptorHandle handle) const
+    {
         auto it = eventMap.find(handle);
         if (it != eventMap.end()) {
             return it->second;
@@ -345,29 +339,33 @@ public:
     }
 
     template <typename EventType>
-    static void registerEventType(std::string_view name, std::string_view category = "") {
+    static void registerEventType(std::string_view name, std::string_view category = "")
+    {
         getInstance().registerEventTypeImpl<EventType>(name, category);
     }
 
     template <typename EventType>
-    EventDescriptorHandle registerEventTypeImpl(std::string_view name, std::string_view category = "") {
+    EventDescriptorHandle registerEventTypeImpl(std::string_view name, std::string_view category = "")
+    {
         EventDescriptor desc;
         desc.name = name;
         desc.category = category;
-        
+
         EventDescriptorHandle handle = getEventDescriptorHandle<EventType>();
         desc.handle = handle;
-        
+
         eventMap[handle] = desc;
         return handle;
     }
 
     // Get all events in a category
-    static std::vector<EventDescriptor> getEventsInCategory(std::string_view category) {
+    static std::vector<EventDescriptor> getEventsInCategory(std::string_view category)
+    {
         return getInstance().getEventsInCategoryImpl(category);
     }
 
-    std::vector<EventDescriptor> getEventsInCategoryImpl(std::string_view category) const {
+    std::vector<EventDescriptor> getEventsInCategoryImpl(std::string_view category) const
+    {
         std::vector<EventDescriptor> result;
         for (const auto& [handle, descriptor] : eventMap) {
             if (descriptor.category == category) {
@@ -391,4 +389,4 @@ private:
 
 } // namespace cf::core
 
-#endif // CF_CORE_TYPEREGISTRY
+#endif // CF_CORE_TYPEREGISTRY_HPP

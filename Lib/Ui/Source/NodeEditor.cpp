@@ -1,17 +1,16 @@
 #include "NodeEditor.hpp"
-#include "Core/TypeRegistry.hpp"
 #include "Core/Commands/AddConnectionCommand.hpp"
+#include "Core/TypeRegistry.hpp"
 #include "SelectionManager.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMenuBar>
-#include <QTimer>
-#include <QToolBar>
 #include <QMouseEvent>
 #include <QScrollBar>
 #include <QSet>
-
+#include <QTimer>
+#include <QToolBar>
 
 #include <algorithm>
 
@@ -29,7 +28,7 @@ NodeItem::NodeItem(QtNode* m_qtNode)
     setFlags(flags() | QGraphicsItem::ItemIsSelectable);
 
     uint32_t inputYOffset = 55;
-    for(const auto& attr : m_qtNode->getAttributes()){
+    for (const auto& attr : m_qtNode->getAttributes()) {
         NodeAttribute* attributeItem = new NodeAttribute(attr, this);
         attributeItem->setZValue(zValue() + 1);
         attributeItem->setPos(-10, inputYOffset);
@@ -70,8 +69,8 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
     painter->setFont(QFont("Inter", 24));
     QRectF textRect(30, 0, NodeWidth, HeaderHeight);
     painter->drawText(textRect,
-                      Qt::AlignLeft | Qt::AlignVCenter,
-                      m_qtNode->getName());
+        Qt::AlignLeft | Qt::AlignVCenter,
+        m_qtNode->getName());
 }
 
 std::shared_ptr<core::Node> NodeItem::getNode() const
@@ -98,20 +97,18 @@ NodeScene::NodeScene(QtApplicationContext& appContext, QObject* parent)
             }
         }
 
-        //SelectionManager::getInstance().setSelection(selectedNodes);
+        // SelectionManager::getInstance().setSelection(selectedNodes);
         m_appContext.selectionManager().setSelection(selectedQtNodes);
     });
 
     connect(&m_appContext, &QtApplicationContext::connectionAdded, this, &NodeScene::handleConnectionAdded);
-
 }
 
 void NodeScene::populateScene()
 {
     clear();
 
-
-    //Draw Nodes
+    // Draw Nodes
     const auto& nodes = m_appContext.getActiveScene()->getNodes();
     for (const auto& [nodeHandler, node] : nodes) {
         static qreal yOffset = -50;
@@ -172,7 +169,7 @@ void NodeScene::populateScene()
             }
         }
 
-        for(auto attrItem : toNodeItem->childItems()) {
+        for (auto attrItem : toNodeItem->childItems()) {
             if (auto nodeAttr = dynamic_cast<NodeAttribute*>(attrItem)) {
                 if (nodeAttr->getAttribute() == m_appContext.getActiveScene()->getAttribute(connection.attributeTarget)) {
                     toAttrItem = nodeAttr;
@@ -186,8 +183,8 @@ void NodeScene::populateScene()
             continue;
         }
 
-        //Get Plug positions
-        // Create and add the connection line
+        // Get Plug positions
+        //  Create and add the connection line
 
         ConnectionItem* connectionItem = new ConnectionItem(fromAttrItem->getOutputPlug(), toAttrItem->getInputPlug());
         connectionItem->setZValue(-1); // Ensure connections are drawn behind nodes
@@ -223,12 +220,12 @@ void NodeScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton) {
         QGraphicsItem* item = itemAt(event->scenePos(), QTransform());
-        
+
         if (NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
             m_dragMode = DragMode::Connecting;
-            
-            //TODO: check if this is necessary
-            if(m_tempConnection) {
+
+            // TODO: check if this is necessary
+            if (m_tempConnection) {
                 delete m_tempConnection;
                 m_tempConnection = nullptr;
             }
@@ -256,7 +253,7 @@ void NodeScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 
 void NodeScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 {
-   if(m_dragMode == DragMode::Connecting && m_tempConnection) {
+    if (m_dragMode == DragMode::Connecting && m_tempConnection) {
         m_tempConnection->updateTempConnection(event->scenePos());
 
         QList<QGraphicsItem*> itemsAtPos = items(event->scenePos());
@@ -269,9 +266,9 @@ void NodeScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
                 break;
             }
         }
-        
-        for(QGraphicsItem* item : items()) {
-            if(NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
+
+        for (QGraphicsItem* item : items()) {
+            if (NodePlug* plug = dynamic_cast<NodePlug*>(item)) {
                 plug->setHovered(plug == hoveredPlug);
             }
         }
@@ -280,24 +277,22 @@ void NodeScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
     } else {
         QGraphicsScene::mouseMoveEvent(event);
     }
-
 }
 
 void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
-    if(m_dragMode == DragMode::Connecting && m_tempConnection) {
+    if (m_dragMode == DragMode::Connecting && m_tempConnection) {
 
         QList<QGraphicsItem*> itemsAtPos = items(event->scenePos());
 
         NodePlug* plug = nullptr;
-        for(auto& item : itemsAtPos) {
+        for (auto& item : itemsAtPos) {
             plug = dynamic_cast<NodePlug*>(item);
 
-            if(plug && plug != m_startPlug) {
+            if (plug && plug != m_startPlug) {
                 break;
-            } 
+            }
         }
-
 
         if (plug) {
             auto fromAttr = m_startPlug->getParentAttribute()->getAttribute()->getHandle();
@@ -309,16 +304,14 @@ void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
             delete m_tempConnection;
             m_tempConnection = nullptr;
 
-
-        } 
-        else {
+        } else {
 
             spdlog::info("NodeScene::mouseReleaseEvent - Not released on a plug, removing temp connection");
             removeItem(m_tempConnection);
             delete m_tempConnection;
             m_tempConnection = nullptr;
 
-            if(m_startPlug) {
+            if (m_startPlug) {
                 m_startPlug->endConnection();
             }
         }
@@ -331,7 +324,8 @@ void NodeScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
     }
 }
 
-NodeAttribute* findAttributeItem(QGraphicsScene* scene, core::AttributeHandle attribute) {
+NodeAttribute* findAttributeItem(QGraphicsScene* scene, core::AttributeHandle attribute)
+{
     for (auto item : scene->items()) {
         if (auto nodeItem = dynamic_cast<NodeItem*>(item)) {
             for (auto attrItem : nodeItem->childItems()) {
@@ -344,7 +338,6 @@ NodeAttribute* findAttributeItem(QGraphicsScene* scene, core::AttributeHandle at
         }
     }
     return nullptr;
-    
 }
 
 void NodeScene::handleConnectionAdded(const core::ConnectionAddedEvent& event)
@@ -409,17 +402,18 @@ void NodeGraphView::showEvent(QShowEvent* event)
 void NodeGraphView::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::MiddleButton) {
-            m_isPanning = true;
-            m_panStartPoint = event->pos();
-            setCursor(Qt::ClosedHandCursor);
-            event->accept();
-            return;
+        m_isPanning = true;
+        m_panStartPoint = event->pos();
+        setCursor(Qt::ClosedHandCursor);
+        event->accept();
+        return;
     }
 
     QGraphicsView::mousePressEvent(event);
 }
 
-void NodeGraphView::mouseMoveEvent(QMouseEvent* event) {
+void NodeGraphView::mouseMoveEvent(QMouseEvent* event)
+{
     if (m_isPanning) {
         // Calculate pan distance and update scrollbars
         horizontalScrollBar()->setValue(horizontalScrollBar()->value() - (event->position().x() - m_panStartPoint.x()));
@@ -428,18 +422,19 @@ void NodeGraphView::mouseMoveEvent(QMouseEvent* event) {
         event->accept();
         return;
     }
-    
+
     QGraphicsView::mouseMoveEvent(event);
 }
 
-void NodeGraphView::mouseReleaseEvent(QMouseEvent* event) {
+void NodeGraphView::mouseReleaseEvent(QMouseEvent* event)
+{
     if (event->button() == Qt::MiddleButton) {
         m_isPanning = false;
         setCursor(Qt::ArrowCursor);
         event->accept();
         return;
     }
-    
+
     QGraphicsView::mouseReleaseEvent(event);
 }
 
@@ -469,7 +464,6 @@ void NodeEditor::showEvent([[maybe_unused]] QShowEvent* event)
     toolBar->addAction("Tool 2");
     toolBar->addAction("Reset View", m_graphView, &NodeGraphView::resetView);
 
-
     QVBoxLayout* nodeEditorLayout = new QVBoxLayout(this);
     nodeEditorLayout->setMenuBar(m_menuBar);
     nodeEditorLayout->addWidget(toolBar);
@@ -487,8 +481,7 @@ NodeAttribute::NodeAttribute(QtAttribute* qtAttribute,
     , m_qtAttribute(qtAttribute)
 {
     // Draw connection Input
-    if (qtAttribute->isInput() || qtAttribute->isInOut())
-    {
+    if (qtAttribute->isInput() || qtAttribute->isInOut()) {
         NodePlug* nodePlug = new NodePlug(this);
         nodePlug->setPos(0, 0);
         nodePlug->setZValue(zValue() + 1);
@@ -496,9 +489,8 @@ NodeAttribute::NodeAttribute(QtAttribute* qtAttribute,
     }
 
     // Draw Connection Output
-    if (qtAttribute->isOutput() || qtAttribute->isInOut())
-    {
-        //TODO validate transform
+    if (qtAttribute->isOutput() || qtAttribute->isInOut()) {
+        // TODO validate transform
         NodePlug* nodePlug = new NodePlug(this);
         nodePlug->setZValue(zValue() + 1);
 
@@ -548,8 +540,7 @@ void NodeAttribute::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
     painter->setFont(QFont("Inter", 12));
     QRectF textRect { 45, 5, 230, 15 };
     painter->drawText(textRect,
-        Qt::AlignLeft | Qt::AlignVCenter,m_qtAttribute->getName());
-
+        Qt::AlignLeft | Qt::AlignVCenter, m_qtAttribute->getName());
 }
 
 NodeItem* NodeAttribute::getParentNode() const
@@ -565,7 +556,7 @@ std::shared_ptr<core::Attribute> NodeAttribute::getAttribute() const
 core::AttributeDescriptor NodeAttribute::getAttributeDescriptor() const
 {
     return m_qtAttribute->getAttributeDescriptor();
-}   
+}
 
 NodePlug* NodeAttribute::getInputPlug() const
 {
@@ -581,10 +572,10 @@ NodePlug* NodeAttribute::getOutputPlug() const
 /*-----------MARK: NodePlug------------------*/
 /*-------------------------------------------*/
 NodePlug::NodePlug(QGraphicsItem* parent)
-    : QAbstractGraphicsShapeItem(parent),
-    m_isConnected(false),
-    m_isConnecting(false),
-    m_connections()
+    : QAbstractGraphicsShapeItem(parent)
+    , m_isConnected(false)
+    , m_isConnecting(false)
+    , m_connections()
 {
     setAcceptHoverEvents(true);
     setZValue(10);
@@ -693,7 +684,7 @@ void NodePlug::addConnection(ConnectionItem* connection)
     m_connections.push_back(connection);
 }
 
-QVariant NodePlug::itemChange(GraphicsItemChange change, const QVariant &value)
+QVariant NodePlug::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     if (change == QGraphicsItem::ItemPositionChange) {
         // Update all connected connections
@@ -704,13 +695,12 @@ QVariant NodePlug::itemChange(GraphicsItemChange change, const QVariant &value)
     return QAbstractGraphicsShapeItem::itemChange(change, value);
 }
 
-
 /*-------------------------------------------*/
 /*-----------MARK: ConnectionItem------------------*/
 /*-------------------------------------------*/
 
-ConnectionItem::ConnectionItem(QGraphicsItem* parent):
-    ConnectionItem(nullptr, nullptr, parent)
+ConnectionItem::ConnectionItem(QGraphicsItem* parent)
+    : ConnectionItem(nullptr, nullptr, parent)
 {
 }
 

@@ -1,9 +1,9 @@
 #include "Application.hpp"
 
 #include "Core/DataTypes.hpp"
-#include "Core/Nodes/AddNode.hpp"
 #include "Core/Events/AttributeEvent.hpp"
 #include "Core/Events/ConnectionAddedEvent.hpp"
+#include "Core/Nodes/AddNode.hpp"
 #include <spdlog/spdlog.h>
 
 namespace cf::framework {
@@ -41,7 +41,6 @@ void registerEventTypes()
     core::TypeRegistry::registerEventType<core::ConnectionRemovedEvent>("ConnectionRemovedEvent", "Connection");
 }
 
-
 int Application::run()
 {
     spdlog::info("Application::start()");
@@ -52,13 +51,10 @@ int Application::run()
     m_appContext.createNewDocument();
     m_appContext.getCurrentDocument()->createNewScene();
 
-
     auto nodeA = m_appContext.getActiveScene()->addNode(std::make_unique<core::AddNode>());
     auto nodeB = m_appContext.getActiveScene()->addNode(std::make_unique<core::AddNode>());
 
     m_appContext.getActiveScene()->connect(nodeA, nodeA->outputs.result, nodeB, nodeB->inputs.input1);
-
-    
 
     m_guiManager.show();
 

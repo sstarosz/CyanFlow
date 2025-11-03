@@ -1,34 +1,31 @@
-#ifndef CF_CORE_EVENTBUS
-#define CF_CORE_EVENTBUS
+#ifndef CF_CORE_EVENTBUS_HPP
+#define CF_CORE_EVENTBUS_HPP
 
 #include "Core/TypeDescriptors.hpp"
 
-#include <functional>
 #include <algorithm>
+#include <functional>
 #include <typeindex>
 
-namespace cf::core
-{
+namespace cf::core {
 
 using EventTypeHandle = uint64_t;
 static constexpr EventTypeHandle kInvalidEventTypeHandle = 0;
 
-
 struct Event {
     Event() = default;
     ~Event() = default;
-    
+
     Event(const Event&) = default;
     Event(Event&&) = default;
 
     Event& operator=(const Event&) = default;
     Event& operator=(Event&&) = default;
-
 };
 
 struct EventBus {
-    
-    using SubscriptionId = size_t; //TODO: Move to TypeDescriptors.hpp?
+
+    using SubscriptionId = size_t; // TODO: Move to TypeDescriptors.hpp?
     static constexpr SubscriptionId kInvalidSubscriptionId = 0;
 
     template <typename EventType>
@@ -105,4 +102,4 @@ private:
 
 } // namespace cf::core
 
-#endif // CF_CORE_EVENTBUS
+#endif // CF_CORE_EVENTBUS_HPP

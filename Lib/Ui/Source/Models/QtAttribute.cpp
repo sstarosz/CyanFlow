@@ -59,32 +59,27 @@ QVariant QtAttribute::getValue() const
 {
     // This is a simplified example. You might want to handle more types.
 
-
     auto typeHandle = m_attribute->getAttributeDescriptor().typeHandle;
-    if (typeHandle == core::TypeRegistry::getTypeHandle<int>()) 
-    {
+    if (typeHandle == core::TypeRegistry::getTypeHandle<int>()) {
         spdlog::debug("QtAttribute::getValue() - Attribute '{}' is of type int with value {}",
             getName().toStdString(),
             m_attribute->getValue<int>());
 
         return QVariant(m_attribute->getValue<int>());
-        
-    } else if (typeHandle == core::TypeRegistry::getTypeHandle<float>()) 
-    {
+
+    } else if (typeHandle == core::TypeRegistry::getTypeHandle<float>()) {
         spdlog::debug("QtAttribute::getValue() - Attribute '{}' is of type float with value {}",
             getName().toStdString(),
             m_attribute->getValue<float>());
         return QVariant(m_attribute->getValue<float>());
 
-    } else if (typeHandle == core::TypeRegistry::getTypeHandle<double>()) 
-    {
+    } else if (typeHandle == core::TypeRegistry::getTypeHandle<double>()) {
         spdlog::debug("QtAttribute::getValue() - Attribute '{}' is of type double with value {}",
             getName().toStdString(),
             m_attribute->getValue<double>());
         return QVariant(m_attribute->getValue<double>());
 
-    } else if (typeHandle == core::TypeRegistry::getTypeHandle<std::string>()) 
-    {
+    } else if (typeHandle == core::TypeRegistry::getTypeHandle<std::string>()) {
         spdlog::debug("QtAttribute::getValue() - Attribute '{}' is of type std::string with value {}",
             getName().toStdString(),
             m_attribute->getValue<std::string>());
