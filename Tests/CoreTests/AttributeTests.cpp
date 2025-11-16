@@ -39,17 +39,17 @@ protected:
     // Register types for testing
     void registerTestTypes()
     {
-        TypeRegistry::registerType<Bool>("Bool");
+        TypeRegistry::registerType<Bool>();
 
-        TypeRegistry::registerType<Int32>("Int32");
-        TypeRegistry::registerType<UInt32>("UInt32");
-        TypeRegistry::registerType<Int64>("Int64");
-        TypeRegistry::registerType<UInt64>("UInt64");
+        TypeRegistry::registerType<Int32>();
+        TypeRegistry::registerType<UInt32>();
+        TypeRegistry::registerType<Int64>();
+        TypeRegistry::registerType<UInt64>();
 
-        TypeRegistry::registerType<Float>("Float");
-        TypeRegistry::registerType<Double>("Double");
+        TypeRegistry::registerType<Float>();
+        TypeRegistry::registerType<Double>();
 
-        TypeRegistry::registerType<String>("String");
+        TypeRegistry::registerType<String>();
     }
 };
 

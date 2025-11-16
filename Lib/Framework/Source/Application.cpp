@@ -16,17 +16,17 @@ Application::Application(int argc, char* argv[])
 
 void registerTypes()
 {
-    core::TypeRegistry::registerType<core::Bool>("bool");
+    core::TypeRegistry::registerType<core::Bool>();
 
-    core::TypeRegistry::registerType<core::Int32>("int32");
-    core::TypeRegistry::registerType<core::UInt32>("uint32");
-    core::TypeRegistry::registerType<core::Int64>("int64");
-    core::TypeRegistry::registerType<core::UInt64>("uint64");
+    core::TypeRegistry::registerType<core::Int32>();
+    core::TypeRegistry::registerType<core::UInt32>();
+    core::TypeRegistry::registerType<core::Int64>();
+    core::TypeRegistry::registerType<core::UInt64>();
 
-    core::TypeRegistry::registerType<core::Float>("float");
-    core::TypeRegistry::registerType<core::Double>("double");
+    core::TypeRegistry::registerType<core::Float>();
+    core::TypeRegistry::registerType<core::Double>();
 
-    core::TypeRegistry::registerType<core::String>("string");
+    core::TypeRegistry::registerType<core::String>();
 }
 
 void registerNodeTypes()

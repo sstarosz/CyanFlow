@@ -4,6 +4,7 @@
 #include "Core/TypeDescriptors.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
 #include <typeindex>
 

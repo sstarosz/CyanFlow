@@ -1,10 +1,12 @@
 #ifndef CF_CORE_TYPEREGISTRY_HPP
 #define CF_CORE_TYPEREGISTRY_HPP
 
+#include "Core/BuildConfig.hpp"
+#include "Core/DataTypes.hpp"
 #include "Core/TypeDescriptors.hpp"
 
-#include "spdlog/spdlog.h"
 #include <cstdint>
+#include <source_location>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -33,12 +35,94 @@ struct attribute_value_type {
 template <typename T>
 using attribute_value_type_t = typename attribute_value_type<T>::type;
 
+template <typename T>
+constexpr const char* getRawTypeName()
+{
+    return std::source_location::current().function_name();
+}
+
+// Workaround to get name of core data types which are type aliases
+template <typename Type>
+constexpr std::string_view getCoreDataType()
+{
+    if constexpr (std::same_as<Type, Bool>) {
+        return "cf::core::Bool";
+    } else if constexpr (std::same_as<Type, Int32>) {
+        return "cf::core::Int32";
+    } else if constexpr (std::same_as<Type, UInt32>) {
+        return "cf::core::UInt32";
+    } else if constexpr (std::same_as<Type, Int64>) {
+        return "cf::core::Int64";
+    } else if constexpr (std::same_as<Type, UInt64>) {
+        return "cf::core::UInt64";
+    } else if constexpr (std::same_as<Type, Float>) {
+        return "cf::core::Float";
+    } else if constexpr (std::same_as<Type, Double>) {
+        return "cf::core::Double";
+    } else if constexpr (std::same_as<Type, String>) {
+        return "cf::core::String";
+    } else {
+        return "UnknownCoreType";
+    }
+}
+
+template <typename Type>
+constexpr std::string_view getCustomTypeName()
+{
+
+    // If basic type, return directly
+    constexpr const char* rawName = getRawTypeName<Type>();
+    std::string_view rawView(rawName);
+
+    rawView.remove_prefix(rawView.find_first_of('<') + 1);
+    rawView.remove_suffix(rawView.size() - rawView.find_last_of('>'));
+
+    // If MSVC, remove "class " or "struct "
+    if constexpr (BuildConfig::isMSVCCompiler()) {
+        if (rawView.starts_with("class ")) {
+            rawView.remove_prefix(6);
+        } else if (rawView.starts_with("struct ")) {
+            rawView.remove_prefix(7);
+        } else if (rawView.starts_with("enum ")) {
+            rawView.remove_prefix(5);
+        } else if (rawView.starts_with("union ")) {
+            rawView.remove_prefix(6);
+        }
+    }
+
+    return rawView;
+}
+
+template <typename Type>
+constexpr std::string_view getTypeName()
+{
+    // Check for core data types first
+    if constexpr (IsCoreFundamentalType<Type>) {
+        return getCoreDataType<Type>();
+    } else {
+        return getCustomTypeName<Type>();
+    }
+}
+
 class TypeRegistry {
 public:
     static TypeRegistry& getInstance()
     {
         static TypeRegistry instance;
         return instance;
+    }
+
+    static void clearInstance()
+    {
+        getInstance().typeMap.clear();
+        getInstance().attributeMap.clear();
+        getInstance().nodeMap.clear();
+        getInstance().eventMap.clear();
+
+        global_type_id_counter = 1;
+        global_attribute_type_id_counter = 1;
+        global_node_type_id_counter = 1;
+        global_event_type_id_counter = 1;
     }
 
     template <typename Type>
@@ -101,16 +185,16 @@ public:
     }
 
     template <typename Type>
-    static void registerType(std::string_view name)
+    static void registerType()
     {
-        getInstance().registerTypeImpl<Type>(name);
+        getInstance().registerTypeImpl<Type>();
     }
 
     template <typename Type>
-    TypeHandle registerTypeImpl(std::string_view name)
+    TypeHandle registerTypeImpl()
     {
         TypeDescriptor desc = makeTypeDescriptor<Type>();
-        desc.name = name;
+        desc.name = getTypeName<Type>();
 
         TypeHandle handle = getTypeHandle<Type>();
         typeMap[handle] = desc;
@@ -130,8 +214,6 @@ public:
         };
 
         desc.copy = [](void* dst, const void* src) {
-            spdlog::debug("Attribute Copy: {}", *static_cast<const Type*>(src));
-
             new (dst) Type(*static_cast<const Type*>(src));
         };
 

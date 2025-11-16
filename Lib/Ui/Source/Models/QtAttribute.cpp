@@ -1,6 +1,7 @@
 #include "Models/QtAttribute.hpp"
 #include "Core/EventBus.hpp"
 #include "Core/Events/AttributeEvent.hpp"
+#include "spdlog/spdlog.h"
 
 namespace cf::ui {
 

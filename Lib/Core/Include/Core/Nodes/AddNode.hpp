@@ -23,12 +23,6 @@ public:
 
     Status compute() override;
 
-    static NodeDescriptor getStaticDescriptor()
-    {
-        static NodeDescriptor descriptor = initialize();
-        return descriptor;
-    }
-
     static NodeDescriptor initialize()
     {
         NodeDescriptor descriptor;
@@ -37,7 +31,7 @@ public:
         AttributeDescriptor input1Desc = addInputAttributeDescriptor(
             &Inputs::input1,
             "Input 1");
-            
+
         AttributeDescriptor input2Desc = addInputAttributeDescriptor(
             &Inputs::input2,
             "Input 2");
